@@ -1,0 +1,310 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect } from 'react';
+import { PageView, TemplateItem, EnquirySubmission } from './types';
+import { ALL_TEMPLATES } from './data/servicesData';
+import { Header } from './components/Header';
+import { Footer } from './components/Footer';
+import { HeroServices } from './components/HeroServices';
+import { CoreServicesSection } from './components/CoreServicesSection';
+import { MoreWaysSection } from './components/MoreWaysSection';
+import { TechStackSection } from './components/TechStackSection';
+import { ProjectsBuiltSection } from './components/ProjectsBuiltSection';
+import { CtaBanner } from './components/CtaBanner';
+import { SearchModal } from './components/SearchModal';
+import { EnquiriesModal } from './components/EnquiriesModal';
+import { WebsiteDevelopmentView } from './components/views/WebsiteDevelopmentView';
+import { WebApplicationView } from './components/views/WebApplicationView';
+import { AppDevelopmentView } from './components/views/AppDevelopmentView';
+import { EcommerceView } from './components/views/EcommerceView';
+import { CustomWebsitesView } from './components/views/CustomWebsitesView';
+import { BusinessProDemo } from './components/demos/BusinessProDemo';
+import { AdminPanelDemo } from './components/demos/AdminPanelDemo';
+import { MobileAppDemo } from './components/demos/MobileAppDemo';
+import { EcommerceStoreDemo } from './components/demos/EcommerceStoreDemo';
+import { CorporateWebsiteDemo } from './components/demos/CorporateWebsiteDemo';
+import { BookingSystemDemo } from './components/demos/BookingSystemDemo';
+import { StudentManagementDemo } from './components/demos/StudentManagementDemo';
+import { EnquiryFormView } from './components/EnquiryFormView';
+import { SuccessView } from './components/SuccessView';
+
+export default function App() {
+  const [currentView, setCurrentView] = useState<PageView>('services');
+  const [activeTemplate, setActiveTemplate] = useState<TemplateItem>(ALL_TEMPLATES[0]);
+  const [submittedEnquiry, setSubmittedEnquiry] = useState<EnquirySubmission | null>(null);
+
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [enquiriesModalOpen, setEnquiriesModalOpen] = useState(false);
+  const [enquiriesList, setEnquiriesList] = useState<EnquirySubmission[]>([]);
+  const [isLoadingEnquiries, setIsLoadingEnquiries] = useState(false);
+
+  // Fetch saved enquiries from backend API
+  const fetchEnquiries = async () => {
+    setIsLoadingEnquiries(true);
+    try {
+      const res = await fetch('/api/enquiries');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          setEnquiriesList(json.data);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not fetch from /api/enquiries, checking localStorage backup:', e);
+    } finally {
+      setIsLoadingEnquiries(false);
+    }
+
+    // LocalStorage fallback if server is unreachable
+    try {
+      const local = JSON.parse(localStorage.getItem('cm_enquiries') || '[]');
+      if (local.length > 0) {
+        setEnquiriesList(local);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchEnquiries();
+  }, []);
+
+  // Navigation handlers
+  const handleNavigate = (view: PageView) => {
+    setCurrentView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleStartProject = (initialRequirement?: string) => {
+    // Pick or create default template
+    if (initialRequirement) {
+      const matched = ALL_TEMPLATES.find((t) =>
+        initialRequirement.toLowerCase().includes(t.name.toLowerCase()) ||
+        initialRequirement.toLowerCase().includes(t.serviceCategory.toLowerCase())
+      );
+      if (matched) setActiveTemplate(matched);
+    }
+    setCurrentView('enquiry-form');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleLivePreview = (template: TemplateItem) => {
+    setActiveTemplate(template);
+    setCurrentView('live-preview');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleUseDesign = (template: TemplateItem) => {
+    setActiveTemplate(template);
+    setCurrentView('enquiry-form');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSubmitSuccess = (enquiry: EnquirySubmission) => {
+    setSubmittedEnquiry(enquiry);
+    setCurrentView('success');
+    fetchEnquiries();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Render Live Preview depending on template type
+  const renderLivePreviewComponent = () => {
+    switch (activeTemplate.previewType) {
+      case 'admin-panel':
+        return (
+          <AdminPanelDemo
+            template={activeTemplate}
+            onBack={() => handleNavigate('web-application')}
+            onUseDesign={handleUseDesign}
+          />
+        );
+      case 'mobile-app':
+        return (
+          <MobileAppDemo
+            template={activeTemplate}
+            onBack={() => handleNavigate('app-development')}
+            onUseDesign={handleUseDesign}
+          />
+        );
+      case 'ecommerce':
+        return (
+          <EcommerceStoreDemo
+            template={activeTemplate}
+            onBack={() => handleNavigate('ecommerce')}
+            onUseDesign={handleUseDesign}
+          />
+        );
+      case 'booking':
+        return (
+          <BookingSystemDemo
+            template={activeTemplate}
+            onBack={() => handleNavigate('web-application')}
+            onUseDesign={handleUseDesign}
+          />
+        );
+      case 'student':
+        return (
+          <StudentManagementDemo
+            template={activeTemplate}
+            onBack={() => handleNavigate('web-application')}
+            onUseDesign={handleUseDesign}
+          />
+        );
+      case 'corporate':
+        return (
+          <CorporateWebsiteDemo
+            template={activeTemplate}
+            onBack={() => handleNavigate('custom-websites')}
+            onUseDesign={handleUseDesign}
+          />
+        );
+      case 'website':
+      default:
+        return (
+          <BusinessProDemo
+            template={activeTemplate}
+            onBack={() => handleNavigate('website-development')}
+            onUseDesign={handleUseDesign}
+          />
+        );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FAF9F6] text-slate-800 flex flex-col selection:bg-orange-500 selection:text-white">
+      
+      {/* Global Navigation Header (hidden on immersive live preview mode for app isolation) */}
+      {currentView !== 'live-preview' && (
+        <Header
+          currentView={currentView}
+          onNavigate={handleNavigate}
+          onOpenSearch={() => setSearchModalOpen(true)}
+          onOpenEnquiries={() => setEnquiriesModalOpen(true)}
+          enquiriesCount={enquiriesList.length}
+        />
+      )}
+
+      {/* Main View Router */}
+      <main className="flex-1">
+        {currentView === 'services' && (
+          <div className="animate-in fade-in duration-200">
+            <HeroServices
+              onStartProject={() => handleStartProject('Website & Web App Project')}
+              onExploreServices={() => {
+                const el = document.getElementById('core-services');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            />
+            <CoreServicesSection onSelectService={handleNavigate} />
+            <MoreWaysSection onStartWithService={handleStartProject} />
+            <TechStackSection />
+            <ProjectsBuiltSection onStartProject={handleStartProject} />
+            <CtaBanner
+              onStartProject={() => handleStartProject('General Digital Project')}
+              onTalkToUs={() => handleNavigate('enquiry-form')}
+            />
+          </div>
+        )}
+
+        {currentView === 'website-development' && (
+          <WebsiteDevelopmentView
+            onBack={() => handleNavigate('services')}
+            onLivePreview={handleLivePreview}
+            onUseDesign={handleUseDesign}
+            onStartProject={handleStartProject}
+          />
+        )}
+
+        {currentView === 'web-application' && (
+          <WebApplicationView
+            onBack={() => handleNavigate('services')}
+            onLivePreview={handleLivePreview}
+            onUseDesign={handleUseDesign}
+            onStartProject={handleStartProject}
+          />
+        )}
+
+        {currentView === 'app-development' && (
+          <AppDevelopmentView
+            onBack={() => handleNavigate('services')}
+            onLivePreview={handleLivePreview}
+            onUseDesign={handleUseDesign}
+            onStartProject={handleStartProject}
+          />
+        )}
+
+        {currentView === 'ecommerce' && (
+          <EcommerceView
+            onBack={() => handleNavigate('services')}
+            onLivePreview={handleLivePreview}
+            onUseDesign={handleUseDesign}
+            onStartProject={handleStartProject}
+          />
+        )}
+
+        {currentView === 'custom-websites' && (
+          <CustomWebsitesView
+            onBack={() => handleNavigate('services')}
+            onLivePreview={handleLivePreview}
+            onUseDesign={handleUseDesign}
+            onStartProject={handleStartProject}
+          />
+        )}
+
+        {currentView === 'live-preview' && (
+          <div className="animate-in fade-in duration-200">
+            {renderLivePreviewComponent()}
+          </div>
+        )}
+
+        {currentView === 'enquiry-form' && (
+          <EnquiryFormView
+            selectedTemplate={activeTemplate}
+            onChangeTemplateClick={() => setSearchModalOpen(true)}
+            onSubmitSuccess={handleSubmitSuccess}
+            onBack={() => handleNavigate('services')}
+          />
+        )}
+
+        {currentView === 'success' && submittedEnquiry && (
+          <SuccessView
+            enquiry={submittedEnquiry}
+            onGoHome={() => handleNavigate('services')}
+            onViewMoreDesigns={() => handleNavigate('website-development')}
+          />
+        )}
+      </main>
+
+      {/* Global Footer (hidden in live preview mode) */}
+      {currentView !== 'live-preview' && (
+        <Footer onNavigate={handleNavigate} />
+      )}
+
+      {/* Search Modal */}
+      <SearchModal
+        isOpen={searchModalOpen}
+        onClose={() => setSearchModalOpen(false)}
+        onSelectTemplate={(tmpl) => {
+          setActiveTemplate(tmpl);
+          handleLivePreview(tmpl);
+        }}
+        onSelectService={handleNavigate}
+      />
+
+      {/* Enquiries Log Modal */}
+      <EnquiriesModal
+        isOpen={enquiriesModalOpen}
+        onClose={() => setEnquiriesModalOpen(false)}
+        enquiries={enquiriesList}
+        isLoading={isLoadingEnquiries}
+        onRefresh={fetchEnquiries}
+      />
+
+    </div>
+  );
+}
