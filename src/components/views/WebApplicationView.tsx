@@ -23,6 +23,7 @@ import { Breadcrumbs } from '../Breadcrumbs';
 
 interface WebApplicationViewProps {
   onBack: () => void;
+  onSelectCategory?: (categoryId: string) => void;
   onLivePreview: (template: TemplateItem) => void;
   onUseDesign: (template: TemplateItem) => void;
   onStartProject: (requirementContext?: string) => void;
@@ -30,6 +31,7 @@ interface WebApplicationViewProps {
 
 export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
   onBack,
+  onSelectCategory,
   onLivePreview,
   onUseDesign,
   onStartProject
@@ -190,27 +192,41 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
           {WEB_APP_SOLUTIONS.map((sol) => (
             <div
               key={sol.id}
-              className="bg-white rounded-2xl p-6 border border-slate-100 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              onClick={() => {
+                if (onSelectCategory) {
+                  onSelectCategory(sol.id);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  if (onSelectCategory) onSelectCategory(sol.id);
+                }
+              }}
+              className="bg-white rounded-2xl p-6 border-2 border-slate-100 hover:border-orange-500 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer group transform hover:-translate-y-1"
             >
               <div>
-                <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center mb-4">
-                  <Settings className="w-6 h-6" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Settings className="w-6 h-6" />
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-all shadow-xs">
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
                 </div>
-                <h3 className="font-bold text-slate-900 text-lg mb-1">{sol.name}</h3>
+                <h3 className="font-extrabold text-slate-900 text-lg mb-1 group-hover:text-orange-600 transition-colors">{sol.name}</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">{sol.desc}</p>
               </div>
 
-              <div className="pt-6">
-                <button
-                  onClick={() => {
-                    const match = webAppTemplates[0];
-                    if (match) onLivePreview(match);
-                  }}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:gap-2.5 transition-all"
-                >
-                  <span>View Demo</span>
+              <div className="pt-6 border-t border-slate-100 mt-4 flex items-center justify-between">
+                <span className="text-xs font-bold text-orange-600 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                  <span>Explore Templates & Demos</span>
                   <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                </span>
+                <span className="text-[10px] font-bold bg-orange-50 text-orange-700 px-2.5 py-0.5 rounded-full border border-orange-200">
+                  View Category &rarr;
+                </span>
               </div>
             </div>
           ))}

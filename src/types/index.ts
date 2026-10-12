@@ -6,6 +6,8 @@ export type PageView =
   | 'web-app-category'
   | 'app-development'
   | 'app-platform'
+  | 'android-app-templates'
+  | 'ios-app-templates'
   | 'ecommerce'
   | 'ecommerce-category'
   | 'custom-websites'
@@ -59,6 +61,9 @@ export interface EnquirySubmission {
   contactPhone: string;
   projectDetails: string;
   status: string;
+  estimatedPriceRange?: string;
+  estimatedBuildDays?: string;
+  estimatedDeliveryDate?: string;
 }
 
 export interface CaseStudy {

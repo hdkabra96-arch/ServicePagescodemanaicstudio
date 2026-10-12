@@ -21,6 +21,7 @@ import { Breadcrumbs } from '../Breadcrumbs';
 
 interface CustomWebsitesViewProps {
   onBack: () => void;
+  onSelectCategory?: (categoryId: string) => void;
   onLivePreview: (template: TemplateItem) => void;
   onUseDesign: (template: TemplateItem) => void;
   onStartProject: (requirementContext?: string) => void;
@@ -28,6 +29,7 @@ interface CustomWebsitesViewProps {
 
 export const CustomWebsitesView: React.FC<CustomWebsitesViewProps> = ({
   onBack,
+  onSelectCategory,
   onLivePreview,
   onUseDesign,
   onStartProject
@@ -49,14 +51,14 @@ export const CustomWebsitesView: React.FC<CustomWebsitesViewProps> = ({
   });
 
   const websiteTypes = [
-    { title: 'Business Website', sub: 'Corporate & Company', icon: Briefcase, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { title: 'Portfolio Website', sub: 'Showcase Your Work', icon: User, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { title: 'Landing Page', sub: 'Single Page Website', icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { title: 'Blog Website', sub: 'Content & News', icon: BookOpen, color: 'text-sky-600', bg: 'bg-sky-50' },
-    { title: 'Personal Website', sub: 'Profile & Resume', icon: User, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { title: 'Service Website', sub: 'Consulting & Agency', icon: Sparkles, color: 'text-teal-600', bg: 'bg-teal-50' },
-    { title: 'Real Estate Website', sub: 'Property Listings', icon: Home, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { title: 'Custom Website', sub: 'Any Unique Requirement', icon: Settings, color: 'text-pink-600', bg: 'bg-pink-50' },
+    { id: 'business', title: 'Business Website', sub: 'Corporate & Company', icon: Briefcase, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { id: 'portfolio', title: 'Portfolio Website', sub: 'Showcase Your Work', icon: User, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { id: 'landing', title: 'Landing Page', sub: 'Single Page Website', icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { id: 'blog', title: 'Blog Website', sub: 'Content & News', icon: BookOpen, color: 'text-sky-600', bg: 'bg-sky-50' },
+    { id: 'portfolio', title: 'Personal Website', sub: 'Profile & Resume', icon: User, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { id: 'corporate', title: 'Service Website', sub: 'Consulting & Agency', icon: Sparkles, color: 'text-teal-600', bg: 'bg-teal-50' },
+    { id: 'realestate', title: 'Real Estate Website', sub: 'Property Listings', icon: Home, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { id: 'custom', title: 'Custom Website', sub: 'Any Unique Requirement', icon: Settings, color: 'text-pink-600', bg: 'bg-pink-50' },
   ];
 
   return (
@@ -198,21 +200,39 @@ export const CustomWebsitesView: React.FC<CustomWebsitesViewProps> = ({
             return (
               <div
                 key={i}
-                onClick={() => onStartProject(`Custom ${type.title}`)}
-                className="bg-white p-5 rounded-2xl border border-slate-100 hover:border-orange-200 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+                onClick={() => {
+                  if (onSelectCategory) {
+                    onSelectCategory(type.id);
+                  } else {
+                    onStartProject(`Custom ${type.title}`);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    if (onSelectCategory) onSelectCategory(type.id);
+                  }
+                }}
+                className="bg-white p-5 rounded-2xl border-2 border-slate-100 hover:border-orange-500 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between group transform hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`w-10 h-10 rounded-xl ${type.bg} ${type.color} flex items-center justify-center`}>
+                  <div className={`w-10 h-10 rounded-xl ${type.bg} ${type.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
                     <Icon className="w-5 h-5" />
                   </div>
-                  <div className="w-6 h-6 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-orange-50 hover:text-orange-600">
+                  <div className="w-6 h-6 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-colors">
                     <ChevronRight className="w-4 h-4" />
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm leading-snug">{type.title}</h3>
+                  <h3 className="font-extrabold text-slate-900 text-sm leading-snug group-hover:text-orange-600 transition-colors">{type.title}</h3>
                   <p className="text-[11px] text-slate-500 mt-0.5">{type.sub}</p>
+                </div>
+
+                <div className="mt-3 pt-2 border-t border-slate-100 flex items-center gap-1 text-[11px] font-bold text-orange-600 group-hover:translate-x-1 transition-transform">
+                  <span>Explore Templates</span>
+                  <ArrowRight className="w-3 h-3" />
                 </div>
               </div>
             );

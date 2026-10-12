@@ -19,6 +19,7 @@ import { EnquiriesModal } from './components/EnquiriesModal';
 import { WebsiteDevelopmentView } from './components/views/WebsiteDevelopmentView';
 import { WebApplicationView } from './components/views/WebApplicationView';
 import { AppDevelopmentView } from './components/views/AppDevelopmentView';
+import { PlatformTemplatesView } from './components/views/PlatformTemplatesView';
 import { EcommerceView } from './components/views/EcommerceView';
 import { CustomWebsitesView } from './components/views/CustomWebsitesView';
 import { BusinessProDemo } from './components/demos/BusinessProDemo';
@@ -28,11 +29,15 @@ import { EcommerceStoreDemo } from './components/demos/EcommerceStoreDemo';
 import { CorporateWebsiteDemo } from './components/demos/CorporateWebsiteDemo';
 import { BookingSystemDemo } from './components/demos/BookingSystemDemo';
 import { StudentManagementDemo } from './components/demos/StudentManagementDemo';
+import { CategoryShowcaseView } from './components/views/CategoryShowcaseView';
 import { EnquiryFormView } from './components/EnquiryFormView';
 import { SuccessView } from './components/SuccessView';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<PageView>('services');
+  const [selectedPlatform, setSelectedPlatform] = useState<'android' | 'ios' | 'all'>('android');
+  const [selectedCategory, setSelectedCategory] = useState<string>('business');
+  const [categoryParentService, setCategoryParentService] = useState<string>('website-development');
   const [activeTemplate, setActiveTemplate] = useState<TemplateItem>(ALL_TEMPLATES[0]);
   const [submittedEnquiry, setSubmittedEnquiry] = useState<EnquirySubmission | null>(null);
 
@@ -77,6 +82,21 @@ export default function App() {
   // Navigation handlers
   const handleNavigate = (view: PageView) => {
     setCurrentView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleOpenCategory = (catId: string, parent: string = 'website-development') => {
+    setSelectedCategory(catId);
+    setCategoryParentService(parent);
+    if (parent === 'web-application') {
+      setCurrentView('web-app-category');
+    } else if (parent === 'ecommerce') {
+      setCurrentView('ecommerce-category');
+    } else if (parent === 'custom-websites') {
+      setCurrentView('custom-category');
+    } else {
+      setCurrentView('website-category');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -127,7 +147,7 @@ export default function App() {
         return (
           <MobileAppDemo
             template={activeTemplate}
-            onBack={() => handleNavigate('app-development')}
+            onBack={() => handleNavigate('app-platform')}
             onUseDesign={handleUseDesign}
           />
         );
@@ -214,6 +234,7 @@ export default function App() {
         {currentView === 'website-development' && (
           <WebsiteDevelopmentView
             onBack={() => handleNavigate('services')}
+            onSelectCategory={(catId) => handleOpenCategory(catId, 'website-development')}
             onLivePreview={handleLivePreview}
             onUseDesign={handleUseDesign}
             onStartProject={handleStartProject}
@@ -223,6 +244,7 @@ export default function App() {
         {currentView === 'web-application' && (
           <WebApplicationView
             onBack={() => handleNavigate('services')}
+            onSelectCategory={(catId) => handleOpenCategory(catId, 'web-application')}
             onLivePreview={handleLivePreview}
             onUseDesign={handleUseDesign}
             onStartProject={handleStartProject}
@@ -232,15 +254,50 @@ export default function App() {
         {currentView === 'app-development' && (
           <AppDevelopmentView
             onBack={() => handleNavigate('services')}
+            onSelectPlatform={(platform) => {
+              setSelectedPlatform(platform);
+              handleNavigate('app-platform');
+            }}
             onLivePreview={handleLivePreview}
             onUseDesign={handleUseDesign}
             onStartProject={handleStartProject}
           />
         )}
 
+        {currentView === 'app-platform' && (
+          <PlatformTemplatesView
+            platform={selectedPlatform}
+            onBack={() => handleNavigate('app-development')}
+            onSwitchPlatform={(newPlatform) => setSelectedPlatform(newPlatform)}
+            onLivePreview={handleLivePreview}
+            onUseDesign={handleUseDesign}
+          />
+        )}
+
+        {currentView === 'android-app-templates' && (
+          <PlatformTemplatesView
+            platform="android"
+            onBack={() => handleNavigate('app-development')}
+            onSwitchPlatform={(newPlatform) => setSelectedPlatform(newPlatform)}
+            onLivePreview={handleLivePreview}
+            onUseDesign={handleUseDesign}
+          />
+        )}
+
+        {currentView === 'ios-app-templates' && (
+          <PlatformTemplatesView
+            platform="ios"
+            onBack={() => handleNavigate('app-development')}
+            onSwitchPlatform={(newPlatform) => setSelectedPlatform(newPlatform)}
+            onLivePreview={handleLivePreview}
+            onUseDesign={handleUseDesign}
+          />
+        )}
+
         {currentView === 'ecommerce' && (
           <EcommerceView
             onBack={() => handleNavigate('services')}
+            onSelectCategory={(catId) => handleOpenCategory(catId, 'ecommerce')}
             onLivePreview={handleLivePreview}
             onUseDesign={handleUseDesign}
             onStartProject={handleStartProject}
@@ -250,6 +307,36 @@ export default function App() {
         {currentView === 'custom-websites' && (
           <CustomWebsitesView
             onBack={() => handleNavigate('services')}
+            onSelectCategory={(catId) => handleOpenCategory(catId, 'custom-websites')}
+            onLivePreview={handleLivePreview}
+            onUseDesign={handleUseDesign}
+            onStartProject={handleStartProject}
+          />
+        )}
+
+        {/* Dedicated Category Showcase Page (Variety of templates for selected category) */}
+        {(currentView === 'website-category' ||
+          currentView === 'web-app-category' ||
+          currentView === 'ecommerce-category' ||
+          currentView === 'custom-category') && (
+          <CategoryShowcaseView
+            categoryId={selectedCategory}
+            parentService={categoryParentService}
+            onBack={() => {
+              if (categoryParentService === 'web-application') {
+                handleNavigate('web-application');
+              } else if (categoryParentService === 'ecommerce') {
+                handleNavigate('ecommerce');
+              } else if (categoryParentService === 'custom-websites') {
+                handleNavigate('custom-websites');
+              } else {
+                handleNavigate('website-development');
+              }
+            }}
+            onSelectCategory={(newCatId) => {
+              setSelectedCategory(newCatId);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             onLivePreview={handleLivePreview}
             onUseDesign={handleUseDesign}
             onStartProject={handleStartProject}

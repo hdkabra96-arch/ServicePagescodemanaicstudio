@@ -16,6 +16,7 @@ import { Breadcrumbs } from '../Breadcrumbs';
 
 interface EcommerceViewProps {
   onBack: () => void;
+  onSelectCategory?: (categoryId: string) => void;
   onLivePreview: (template: TemplateItem) => void;
   onUseDesign: (template: TemplateItem) => void;
   onStartProject: (requirementContext?: string) => void;
@@ -23,6 +24,7 @@ interface EcommerceViewProps {
 
 export const EcommerceView: React.FC<EcommerceViewProps> = ({
   onBack,
+  onSelectCategory,
   onLivePreview,
   onUseDesign,
   onStartProject
@@ -176,27 +178,42 @@ export const EcommerceView: React.FC<EcommerceViewProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { title: 'Multi-Vendor Marketplace', icon: '🏪', desc: 'Allow multiple sellers to list products and receive automated split commissions.' },
-            { title: 'Single Vendor Online Store', icon: '🛒', desc: 'Direct-to-consumer store for your brand with full control over inventory.' },
-            { title: 'Niche Store (Fashion / Food)', icon: '🛍️', desc: 'Specialized layout tuned for apparel, culinary, or luxury lifestyle.' },
-            { title: 'Custom E-commerce Solution', icon: '⚙️', desc: 'Bespoke checkout, subscription models, and B2B wholesale portals.' },
-          ].map((sol, i) => (
+            { id: 'multi-vendor', title: 'Multi-Vendor Marketplace', icon: '🏪', desc: 'Allow multiple sellers to list products and receive automated split commissions.' },
+            { id: 'single-vendor', title: 'Single Vendor Online Store', icon: '🛒', desc: 'Direct-to-consumer store for your brand with full control over inventory.' },
+            { id: 'niche-store', title: 'Niche Store (Fashion / Food)', icon: '🛍️', desc: 'Specialized layout tuned for apparel, culinary, or luxury lifestyle.' },
+            { id: 'custom-ecommerce', title: 'Custom E-commerce Solution', icon: '⚙️', desc: 'Bespoke checkout, subscription models, and B2B wholesale portals.' },
+          ].map((sol) => (
             <div
-              key={i}
-              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-xs hover:border-orange-200 transition-all flex flex-col justify-between"
+              key={sol.id}
+              onClick={() => {
+                if (onSelectCategory) {
+                  onSelectCategory(sol.id);
+                } else {
+                  onStartProject(sol.title);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  if (onSelectCategory) onSelectCategory(sol.id);
+                }
+              }}
+              className="bg-white p-6 rounded-2xl border-2 border-slate-100 hover:border-orange-500 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer group transform hover:-translate-y-1"
             >
               <div>
-                <span className="text-3xl block mb-3">{sol.icon}</span>
-                <h3 className="font-bold text-slate-900 text-base">{sol.title}</h3>
+                <span className="text-3xl block mb-3 group-hover:scale-110 transition-transform">{sol.icon}</span>
+                <h3 className="font-extrabold text-slate-900 text-base group-hover:text-orange-600 transition-colors">{sol.title}</h3>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">{sol.desc}</p>
               </div>
-              <div className="pt-4 mt-2">
-                <button
-                  onClick={() => onStartProject(sol.title)}
-                  className="w-8 h-8 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center hover:bg-orange-600 hover:text-white transition-colors"
-                >
+              <div className="pt-4 mt-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs font-bold text-orange-600 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                  <span>Explore Templates</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+                <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-colors">
                   <ArrowRight className="w-4 h-4" />
-                </button>
+                </div>
               </div>
             </div>
           ))}

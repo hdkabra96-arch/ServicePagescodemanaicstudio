@@ -30,6 +30,7 @@ import { Breadcrumbs } from '../Breadcrumbs';
 
 interface WebsiteDevelopmentViewProps {
   onBack: () => void;
+  onSelectCategory: (categoryId: string) => void;
   onLivePreview: (template: TemplateItem) => void;
   onUseDesign: (template: TemplateItem) => void;
   onStartProject: (requirementContext?: string) => void;
@@ -37,6 +38,7 @@ interface WebsiteDevelopmentViewProps {
 
 export const WebsiteDevelopmentView: React.FC<WebsiteDevelopmentViewProps> = ({
   onBack,
+  onSelectCategory,
   onLivePreview,
   onUseDesign,
   onStartProject
@@ -207,29 +209,34 @@ export const WebsiteDevelopmentView: React.FC<WebsiteDevelopmentViewProps> = ({
           {WEBSITE_SOLUTIONS.map((sol) => (
             <div
               key={sol.id}
-              onClick={() => setSelectedCategory(sol.name)}
-              className={`p-5 rounded-2xl border cursor-pointer transition-all duration-200 flex flex-col justify-between ${
-                selectedCategory === sol.name
-                  ? 'border-orange-500 bg-white shadow-md ring-2 ring-orange-200'
-                  : 'border-slate-100 bg-white hover:border-orange-200 hover:shadow-sm'
-              }`}
+              onClick={() => onSelectCategory(sol.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') onSelectCategory(sol.id);
+              }}
+              className="p-5 rounded-2xl border-2 border-slate-200/90 hover:border-orange-500 bg-white hover:bg-orange-50/20 shadow-xs hover:shadow-xl cursor-pointer transition-all duration-300 flex flex-col justify-between group transform hover:-translate-y-1"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+                <div className="w-11 h-11 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xs">
                   <Globe className="w-5 h-5" />
                 </div>
-                <div className="w-7 h-7 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-orange-50 hover:text-orange-600">
+                <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-all shadow-xs">
                   <ChevronRight className="w-4 h-4" />
                 </div>
               </div>
 
               <div>
-                <h3 className="font-bold text-slate-900 text-sm leading-snug">
+                <h3 className="font-extrabold text-slate-900 text-sm leading-snug group-hover:text-orange-600 transition-colors">
                   {sol.name}
                 </h3>
-                <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">
+                <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
                   {sol.desc}
                 </p>
+                <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-orange-600 group-hover:translate-x-1 transition-transform">
+                  <span>Explore Templates</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </div>
               </div>
             </div>
           ))}
