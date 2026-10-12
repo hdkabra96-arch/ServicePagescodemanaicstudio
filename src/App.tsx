@@ -39,6 +39,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState<string>('business');
   const [categoryParentService, setCategoryParentService] = useState<string>('website-development');
   const [activeTemplate, setActiveTemplate] = useState<TemplateItem>(ALL_TEMPLATES[0]);
+  const [customizedDesignContext, setCustomizedDesignContext] = useState<any>(null);
   const [submittedEnquiry, setSubmittedEnquiry] = useState<EnquirySubmission | null>(null);
 
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -119,8 +120,9 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleUseDesign = (template: TemplateItem) => {
+  const handleUseDesign = (template: TemplateItem, customData?: any) => {
     setActiveTemplate(template);
+    setCustomizedDesignContext(customData || null);
     setCurrentView('enquiry-form');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -352,6 +354,7 @@ export default function App() {
         {currentView === 'enquiry-form' && (
           <EnquiryFormView
             selectedTemplate={activeTemplate}
+            customizationContext={customizedDesignContext}
             onChangeTemplateClick={() => setSearchModalOpen(true)}
             onSubmitSuccess={handleSubmitSuccess}
             onBack={() => handleNavigate('services')}

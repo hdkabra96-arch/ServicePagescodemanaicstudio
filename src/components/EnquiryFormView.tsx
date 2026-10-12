@@ -14,6 +14,7 @@ import { Breadcrumbs } from './Breadcrumbs';
 
 interface EnquiryFormViewProps {
   selectedTemplate: TemplateItem;
+  customizationContext?: any;
   onChangeTemplateClick: () => void;
   onSubmitSuccess: (enquiry: EnquirySubmission) => void;
   onBack: () => void;
@@ -21,13 +22,20 @@ interface EnquiryFormViewProps {
 
 export const EnquiryFormView: React.FC<EnquiryFormViewProps> = ({
   selectedTemplate,
+  customizationContext,
   onChangeTemplateClick,
   onSubmitSuccess,
   onBack
 }) => {
-  const [businessName, setBusinessName] = useState('');
+  const [businessName, setBusinessName] = useState(
+    customizationContext?.brandName || ''
+  );
   const [businessCategory, setBusinessCategory] = useState(selectedTemplate.industryTag || 'Corporate');
-  const [preference, setPreference] = useState('Use this design with my branding');
+  const [preference, setPreference] = useState(
+    customizationContext
+      ? `Customized Theme (Color: ${customizationContext.primaryColor}, Font: ${customizationContext.fontFamily})`
+      : 'Use this design with my branding'
+  );
   const [pages, setPages] = useState('5 – 10 pages');
   const [features, setFeatures] = useState<string[]>([
     'Contact form',
@@ -184,6 +192,30 @@ export const EnquiryFormView: React.FC<EnquiryFormViewProps> = ({
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        {/* Customization badge banner if user customized this design */}
+        {customizationContext && (
+          <div className="mb-6 p-4 rounded-2xl bg-slate-900 border border-slate-800 text-white flex flex-wrap items-center justify-between gap-3 shadow-md">
+            <div className="flex items-center gap-3">
+              <span
+                className="w-4 h-4 rounded-full ring-2 ring-white/30 shrink-0"
+                style={{ backgroundColor: customizationContext.primaryColor }}
+              />
+              <div>
+                <div className="text-xs font-bold text-white flex items-center gap-2">
+                  <span>Custom Theme Applied:</span>
+                  <span className="text-orange-400 font-extrabold">{customizationContext.brandName}</span>
+                </div>
+                <div className="text-[11px] text-slate-300">
+                  Primary Color: <span className="font-mono font-bold text-white">{customizationContext.primaryColor}</span> • Accent: <span className="font-mono font-bold text-white">{customizationContext.accentColor}</span> • Font: <span className="capitalize">{customizationContext.fontFamily}</span> • Corners: <span className="capitalize">{customizationContext.borderRadius}</span>
+                </div>
+              </div>
+            </div>
+            <span className="text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+              ✓ Attached to Project Request
+            </span>
+          </div>
+        )}
 
         {/* Form Container */}
         <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-sm">

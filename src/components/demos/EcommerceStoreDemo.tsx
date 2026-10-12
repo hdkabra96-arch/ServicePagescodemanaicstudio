@@ -14,14 +14,23 @@ import {
   Trash2,
   X,
   Star,
-  Check
+  Check,
+  Sliders,
+  Sparkles
 } from 'lucide-react';
 import { TemplateItem } from '../../types';
+import {
+  useThemeCustomizer,
+  DemoControlBar,
+  DemoCustomizerDrawer,
+  FloatingCustomizeButton,
+  ThemeCustomizerState
+} from './DemoThemeCustomizer';
 
 interface EcommerceStoreDemoProps {
   template: TemplateItem;
   onBack: () => void;
-  onUseDesign: (template: TemplateItem) => void;
+  onUseDesign: (template: TemplateItem, customData?: ThemeCustomizerState) => void;
 }
 
 interface CartItem {
@@ -50,6 +59,23 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
       img: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&auto=format&fit=crop&q=80'
     }
   ]);
+
+  const {
+    customization,
+    drawerOpen,
+    setDrawerOpen,
+    applyPalette,
+    updateField,
+    resetToDefault,
+    getRadiusClass,
+    getFontFamilyClass,
+    calculateEstimate
+  } = useThemeCustomizer(template, {
+    brandName: 'StyleHub Luxe',
+    primaryColor: '#F95700',
+    accentColor: '#FB923C',
+    paletteId: 'orange'
+  });
 
   const products = [
     {
@@ -127,8 +153,8 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
           name: product.name,
           price: product.price,
           qty: 1,
-          img: product.img,
-          category: product.category
+          category: product.category,
+          img: product.img
         }
       ];
     });
@@ -138,14 +164,8 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
   const updateQty = (id: string, delta: number) => {
     setCartItems((prev) =>
       prev
-        .map((item) => {
-          if (item.id === id) {
-            const newQty = item.qty + delta;
-            return newQty > 0 ? { ...item, qty: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean) as CartItem[]
+        .map((item) => (item.id === id ? { ...item, qty: item.qty + delta } : item))
+        .filter((item) => item.qty > 0)
     );
   };
 
@@ -153,65 +173,120 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
   const totalCartCount = cartItems.reduce((acc, curr) => acc + curr.qty, 0);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
+    <div className={`min-h-screen bg-slate-900 text-slate-100 flex flex-col ${getFontFamilyClass()}`}>
       
       {/* Top Banner */}
-      <div className="bg-emerald-600 text-white text-xs font-semibold py-2 px-4 text-center flex items-center justify-center gap-2">
-        <span>Interactive E-commerce Store: Add products to cart, change quantities, and test checkout user flow.</span>
-      </div>
-
-      {/* Sticky Bar */}
-      <div className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-4 sm:px-8 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Templates</span>
-          </button>
-          <div>
-            <span className="font-bold text-white text-sm">{template.name}</span>
-            <span className="text-slate-400 text-xs ml-2">({template.templateCode})</span>
-          </div>
-        </div>
-
-        <button
-          onClick={() => onUseDesign(template)}
-          className="flex items-center gap-2 bg-[#F95700] hover:bg-[#EA4D00] text-white px-5 py-2 rounded-full font-bold text-xs shadow-lg shadow-orange-500/30 transition-all transform hover:scale-105"
+      {customization.showPromoBanner && (
+        <div
+          className="text-white text-xs font-semibold py-2 px-4 text-center flex items-center justify-center gap-2 transition-colors"
+          style={{ backgroundColor: customization.primaryColor }}
         >
-          <span>Use This Design</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
+          <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+          <span>
+            Live E-Commerce Demo: {customization.brandName} Storefront with real cart calculations & instant color switching!
+          </span>
+        </div>
+      )}
 
-      {/* Main E-commerce Store Layout (Light Theme inside) */}
-      <div className="flex-1 bg-white text-slate-800 font-sans">
+      {/* Control Bar */}
+      <DemoControlBar
+        template={template}
+        customization={customization}
+        onBack={onBack}
+        onOpenCustomizer={() => setDrawerOpen(true)}
+        onApplyPalette={applyPalette}
+        onUseDesign={onUseDesign}
+      />
+
+      {/* Slide-over Theme Customizer Drawer */}
+      <DemoCustomizerDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        template={template}
+        customization={customization}
+        onApplyPalette={applyPalette}
+        onUpdateField={updateField}
+        onReset={resetToDefault}
+        onUseDesign={onUseDesign}
+      />
+
+      {/* Floating Customize Button */}
+      <FloatingCustomizeButton
+        onOpen={() => setDrawerOpen(true)}
+        primaryColor={customization.primaryColor}
+      />
+
+      {/* Main E-commerce Store Layout */}
+      <div
+        className={`flex-1 transition-colors ${
+          customization.themeMode === 'dark'
+            ? 'bg-slate-950 text-slate-100'
+            : customization.themeMode === 'dim'
+            ? 'bg-slate-900 text-slate-100'
+            : 'bg-white text-slate-800'
+        }`}
+      >
         
-        {/* StyleHub Navigation */}
-        <header className="border-b border-slate-100 px-6 py-4 flex items-center justify-between sticky top-[57px] bg-white/95 backdrop-blur-md z-20">
+        {/* Navigation */}
+        <header
+          className={`border-b px-6 py-4 flex items-center justify-between sticky top-12 z-20 backdrop-blur-md ${
+            customization.themeMode === 'light'
+              ? 'bg-white/95 border-slate-100 text-slate-900'
+              : 'bg-slate-950/95 border-slate-800 text-white'
+          }`}
+        >
           <div className="flex items-center gap-2">
-            <span className="text-xl font-extrabold text-slate-900 tracking-tight">
-              Style<span className="text-orange-600">Hub</span>
+            <span className="text-xl font-extrabold tracking-tight">
+              {customization.brandName}
             </span>
           </div>
 
-          <nav className="hidden md:flex items-center space-x-6 text-xs font-semibold text-slate-600">
-            <button onClick={() => setActiveCategory('all')} className={activeCategory === 'all' ? 'text-orange-600' : 'hover:text-slate-900'}>Home</button>
-            <button onClick={() => setActiveCategory('all')} className="hover:text-slate-900">Shop</button>
-            <button onClick={() => setActiveCategory('men')} className={activeCategory === 'men' ? 'text-orange-600' : 'hover:text-slate-900'}>Men</button>
-            <button onClick={() => setActiveCategory('women')} className={activeCategory === 'women' ? 'text-orange-600' : 'hover:text-slate-900'}>Women</button>
-            <button onClick={() => setActiveCategory('accessories')} className={activeCategory === 'accessories' ? 'text-orange-600' : 'hover:text-slate-900'}>Accessories</button>
+          <nav
+            className={`hidden md:flex items-center space-x-6 text-xs font-semibold ${
+              customization.themeMode === 'light' ? 'text-slate-600' : 'text-slate-300'
+            }`}
+          >
+            <button
+              onClick={() => setActiveCategory('all')}
+              style={{ color: activeCategory === 'all' ? customization.primaryColor : undefined }}
+              className="font-bold"
+            >
+              Home
+            </button>
+            <button
+              onClick={() => setActiveCategory('men')}
+              style={{ color: activeCategory === 'men' ? customization.primaryColor : undefined }}
+              className="hover:opacity-75"
+            >
+              Men
+            </button>
+            <button
+              onClick={() => setActiveCategory('women')}
+              style={{ color: activeCategory === 'women' ? customization.primaryColor : undefined }}
+              className="hover:opacity-75"
+            >
+              Women
+            </button>
+            <button
+              onClick={() => setActiveCategory('accessories')}
+              style={{ color: activeCategory === 'accessories' ? customization.primaryColor : undefined }}
+              className="hover:opacity-75"
+            >
+              Accessories
+            </button>
           </nav>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => setCartOpen(true)}
-              className="relative p-2.5 rounded-full bg-slate-100 hover:bg-orange-50 text-slate-700 hover:text-orange-600 transition-colors"
+              className="relative p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors"
             >
               <ShoppingCart className="w-5 h-5" />
               {totalCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-orange-600 text-white text-[10px] font-bold flex items-center justify-center">
+                <span
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center shadow-xs"
+                  style={{ backgroundColor: customization.primaryColor }}
+                >
                   {totalCartCount}
                 </span>
               )}
@@ -220,30 +295,51 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
         </header>
 
         {/* Hero Section */}
-        <section className="relative bg-gradient-to-r from-orange-50 via-amber-50 to-rose-50 py-16 px-6 overflow-hidden">
+        <section
+          className={`relative py-16 px-6 overflow-hidden ${
+            customization.themeMode === 'light'
+              ? 'bg-gradient-to-r from-orange-50/50 via-amber-50/40 to-rose-50/40'
+              : 'bg-slate-900/60'
+          }`}
+        >
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div className="space-y-4">
-              <span className="text-orange-600 font-extrabold text-xs tracking-wider uppercase">
+              <span
+                className="font-extrabold text-xs tracking-wider uppercase px-2.5 py-0.5 rounded-full inline-block"
+                style={{
+                  color: customization.primaryColor,
+                  backgroundColor: `${customization.primaryColor}15`
+                }}
+              >
                 New Season &bull; 2026 Collection
               </span>
-              <h1 className="text-4xl sm:text-5xl font-black text-slate-900 leading-tight">
-                New Season <br />
-                <span className="text-orange-600">New Style</span>
+              <h1 className="text-4xl sm:text-5xl font-black leading-tight">
+                {customization.brandName} <br />
+                <span style={{ color: customization.primaryColor }}>Signature Edit</span>
               </h1>
-              <p className="text-slate-600 text-sm max-w-md leading-relaxed">
-                Discover the latest collection of trendy clothing for every occasion. Modern silhouettes designed with premium comfort.
+              <p className="text-slate-500 text-sm max-w-md leading-relaxed">
+                {customization.tagline}
               </p>
-              <button
-                onClick={() => setActiveCategory('all')}
-                className="bg-orange-600 hover:bg-orange-700 text-white px-7 py-3 rounded-full text-xs font-bold shadow-md shadow-orange-500/25 flex items-center gap-2"
-              >
-                <span>Shop Now</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={() => setActiveCategory('all')}
+                  className={`text-white px-7 py-3 text-xs font-bold shadow-md flex items-center gap-2 transition-transform hover:scale-105 ${getRadiusClass('btn')}`}
+                  style={{ backgroundColor: customization.primaryColor }}
+                >
+                  <span>{customization.ctaText}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setDrawerOpen(true)}
+                  className={`px-4 py-3 text-xs font-bold border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${getRadiusClass('btn')}`}
+                >
+                  Customize Colors
+                </button>
+              </div>
             </div>
 
             <div className="relative">
-              <div className="rounded-3xl overflow-hidden shadow-xl aspect-4/3 max-w-md mx-auto">
+              <div className={`overflow-hidden shadow-xl aspect-4/3 max-w-md mx-auto ${getRadiusClass('card')}`}>
                 <img
                   src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80"
                   alt="Fashion model"
@@ -254,62 +350,74 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
           </div>
         </section>
 
-        {/* 4 Trust Highlights (matching Reference Image 9) */}
-        <section className="border-y border-slate-100 py-6 px-6 bg-white">
-          <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="flex items-center gap-3">
-              <Truck className="w-6 h-6 text-orange-600 shrink-0" />
-              <div>
-                <h5 className="font-bold text-xs text-slate-900">Free Shipping</h5>
-                <p className="text-[11px] text-slate-500">On all prepaid orders</p>
+        {/* 4 Trust Highlights */}
+        {customization.showBadges && (
+          <section
+            className={`border-y py-6 px-6 ${
+              customization.themeMode === 'light'
+                ? 'border-slate-100 bg-white'
+                : 'border-slate-800 bg-slate-900/40'
+            }`}
+          >
+            <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="flex items-center gap-3">
+                <Truck className="w-6 h-6 shrink-0" style={{ color: customization.primaryColor }} />
+                <div>
+                  <h5 className="font-bold text-xs">Free Shipping</h5>
+                  <p className="text-[11px] text-slate-500">On all prepaid orders</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <RotateCcw className="w-6 h-6 shrink-0" style={{ color: customization.primaryColor }} />
+                <div>
+                  <h5 className="font-bold text-xs">Easy Returns</h5>
+                  <p className="text-[11px] text-slate-500">7-day hassle-free policy</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="w-6 h-6 shrink-0" style={{ color: customization.primaryColor }} />
+                <div>
+                  <h5 className="font-bold text-xs">Secure Payment</h5>
+                  <p className="text-[11px] text-slate-500">256-bit encrypted checkout</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Headphones className="w-6 h-6 shrink-0" style={{ color: customization.primaryColor }} />
+                <div>
+                  <h5 className="font-bold text-xs">24/7 Support</h5>
+                  <p className="text-[11px] text-slate-500">Always here to assist</p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <RotateCcw className="w-6 h-6 text-orange-600 shrink-0" />
-              <div>
-                <h5 className="font-bold text-xs text-slate-900">Easy Returns</h5>
-                <p className="text-[11px] text-slate-500">7-day hassle-free policy</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="w-6 h-6 text-orange-600 shrink-0" />
-              <div>
-                <h5 className="font-bold text-xs text-slate-900">Secure Payment</h5>
-                <p className="text-[11px] text-slate-500">256-bit encrypted checkout</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Headphones className="w-6 h-6 text-orange-600 shrink-0" />
-              <div>
-                <h5 className="font-bold text-xs text-slate-900">24/7 Support</h5>
-                <p className="text-[11px] text-slate-500">Always here to assist</p>
-              </div>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Shop by Category Tabs */}
         <section className="py-12 px-6 max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
             <div>
-              <h2 className="text-2xl font-black text-slate-900">Shop by Category</h2>
+              <h2 className="text-2xl font-black">Shop by Category</h2>
               <p className="text-xs text-slate-500 mt-1">Curated selections for every aesthetic.</p>
             </div>
 
             <div className="flex items-center gap-2">
-              {(['all', 'men', 'women', 'accessories', 'footwear'] as const).map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-full capitalize transition-colors ${
-                    activeCategory === cat
-                      ? 'bg-orange-600 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+              {(['all', 'men', 'women', 'accessories', 'footwear'] as const).map((cat) => {
+                const isActive = activeCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-full capitalize transition-colors ${
+                      isActive
+                        ? 'text-white shadow-sm'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:opacity-80'
+                    }`}
+                    style={{ backgroundColor: isActive ? customization.primaryColor : undefined }}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -318,7 +426,11 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
             {filteredProducts.map((prod) => (
               <div
                 key={prod.id}
-                className="group rounded-2xl border border-slate-100 hover:border-orange-200 shadow-xs hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col justify-between bg-white"
+                className={`group border hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between ${getRadiusClass('card')} ${
+                  customization.themeMode === 'light'
+                    ? 'bg-white border-slate-100 hover:border-slate-300'
+                    : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                }`}
               >
                 <div>
                   <div className="relative aspect-4/5 overflow-hidden bg-slate-100">
@@ -327,7 +439,10 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
                       alt={prod.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-xs text-[10px] font-bold text-orange-600 px-2.5 py-1 rounded-full shadow-xs">
+                    <span
+                      className="absolute top-3 left-3 bg-white/95 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-xs"
+                      style={{ color: customization.primaryColor }}
+                    >
                       {prod.badge}
                     </span>
                   </div>
@@ -335,12 +450,12 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
                   <div className="p-4 space-y-1.5">
                     <div className="flex items-center gap-1 text-amber-500 text-xs">
                       <Star className="w-3.5 h-3.5 fill-amber-500" />
-                      <span className="font-bold text-slate-700 text-[11px]">{prod.rating}</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px]">{prod.rating}</span>
                     </div>
-                    <h4 className="font-bold text-slate-900 text-sm group-hover:text-orange-600 transition-colors">
+                    <h4 className="font-bold text-sm">
                       {prod.name}
                     </h4>
-                    <div className="font-mono font-bold text-slate-900 text-base">
+                    <div className="font-mono font-bold text-base">
                       ₹{prod.price.toLocaleString('en-IN')}
                     </div>
                   </div>
@@ -349,7 +464,8 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
                 <div className="p-4 pt-0">
                   <button
                     onClick={() => addToCart(prod)}
-                    className="w-full bg-[#F95700] hover:bg-[#EA4D00] text-white py-2.5 rounded-xl font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2"
+                    className={`w-full text-white py-2.5 font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 ${getRadiusClass('btn')}`}
+                    style={{ backgroundColor: customization.primaryColor }}
                   >
                     <ShoppingCart className="w-3.5 h-3.5" />
                     <span>Add to Cart</span>
@@ -369,7 +485,7 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
             
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5 text-orange-600" />
+                <ShoppingCart className="w-5 h-5" style={{ color: customization.primaryColor }} />
                 <h3 className="font-bold text-base text-slate-900">Your Shopping Bag ({totalCartCount})</h3>
               </div>
               <button onClick={() => setCartOpen(false)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-500">
@@ -422,17 +538,20 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
               <div className="p-5 border-t border-slate-100 bg-slate-50 space-y-3">
                 <div className="flex justify-between text-sm font-bold text-slate-900">
                   <span>Subtotal:</span>
-                  <span className="font-mono text-orange-600">₹{totalAmount.toLocaleString('en-IN')}</span>
+                  <span className="font-mono font-extrabold" style={{ color: customization.primaryColor }}>
+                    ₹{totalAmount.toLocaleString('en-IN')}
+                  </span>
                 </div>
                 <p className="text-[10px] text-slate-400">Shipping and taxes calculated at checkout.</p>
                 <button
                   onClick={() => {
                     setCartOpen(false);
-                    onUseDesign(template);
+                    onUseDesign(template, customization);
                   }}
-                  className="w-full bg-[#F95700] hover:bg-[#EA4D00] text-white py-3 rounded-full font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
+                  className={`w-full text-white py-3 font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 ${getRadiusClass('btn')}`}
+                  style={{ backgroundColor: customization.primaryColor }}
                 >
-                  <span>Build This E-commerce Store</span>
+                  <span>Build This E-commerce Store for {customization.brandName}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -443,21 +562,26 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
       )}
 
       {/* Sticky Bottom Bar */}
-      <div className="sticky bottom-0 z-40 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl">
-        <div>
-          <h4 className="font-extrabold text-white text-sm">{template.name}</h4>
-          <p className="text-xs text-slate-400">Ready-made e-commerce design with cart & checkout ({template.templateCode})</p>
+      <div className="sticky bottom-0 z-30 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl">
+        <div className="flex items-center gap-2.5">
+          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: customization.primaryColor }} />
+          <div>
+            <h4 className="font-extrabold text-white text-sm">{customization.brandName} ({template.templateCode})</h4>
+            <p className="text-xs text-slate-400">Ready-made e-commerce design with active theme customizer</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={onBack}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg"
+            onClick={() => setDrawerOpen(true)}
+            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5"
           >
-            &larr; Back to Templates
+            <Sliders className="w-3.5 h-3.5 text-orange-400" />
+            <span>Customize Store</span>
           </button>
           <button
-            onClick={() => onUseDesign(template)}
-            className="bg-[#F95700] hover:bg-[#EA4D00] text-white px-6 py-2 rounded-full font-bold text-xs shadow-lg shadow-orange-500/30"
+            onClick={() => onUseDesign(template, customization)}
+            className={`text-white px-6 py-2 font-bold text-xs shadow-lg transition-transform hover:scale-105 ${getRadiusClass('btn')}`}
+            style={{ backgroundColor: customization.primaryColor }}
           >
             Use This Design &rarr;
           </button>

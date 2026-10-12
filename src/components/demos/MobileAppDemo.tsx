@@ -31,14 +31,22 @@ import {
   Activity,
   Compass,
   Layers,
-  ChevronLeft
+  ChevronLeft,
+  Sliders
 } from 'lucide-react';
 import { TemplateItem } from '../../types';
+import {
+  useThemeCustomizer,
+  DemoControlBar,
+  DemoCustomizerDrawer,
+  FloatingCustomizeButton,
+  ThemeCustomizerState
+} from './DemoThemeCustomizer';
 
 interface MobileAppDemoProps {
   template: TemplateItem;
   onBack: () => void;
-  onUseDesign: (template: TemplateItem) => void;
+  onUseDesign: (template: TemplateItem, customData?: ThemeCustomizerState) => void;
 }
 
 type IosAppMode = 'food' | 'business' | 'fitness' | 'ecommerce';
@@ -117,6 +125,23 @@ export const MobileAppDemo: React.FC<MobileAppDemoProps> = ({
   const [selectedShoeSize, setSelectedShoeSize] = useState<number>(9);
   const [bagItemCount, setBagItemCount] = useState<number>(2);
 
+  const {
+    customization,
+    drawerOpen,
+    setDrawerOpen,
+    applyPalette,
+    updateField,
+    resetToDefault,
+    getRadiusClass,
+    getFontFamilyClass,
+    calculateEstimate
+  } = useThemeCustomizer(template, {
+    brandName: template.name.replace(/\s*\(Android\s*App\)|\s*\(iOS\s*App\)/gi, '').trim() || 'MobileApp Pro',
+    primaryColor: platform === 'ios' ? '#4F46E5' : '#059669',
+    accentColor: platform === 'ios' ? '#38BDF8' : '#34D399',
+    paletteId: platform === 'ios' ? 'blue' : 'emerald'
+  });
+
   const showNotification = (msg: string) => {
     setCopiedNotification(msg);
     setTimeout(() => setCopiedNotification(null), 3000);
@@ -176,130 +201,125 @@ export const MobileAppDemo: React.FC<MobileAppDemoProps> = ({
   const screensList = getScreensList();
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
+    <div className={`min-h-screen bg-slate-900 text-slate-100 flex flex-col ${getFontFamilyClass()}`}>
       {/* Top Demo Banner */}
-      <div
-        className={`text-white text-xs font-semibold py-2 px-4 text-center flex items-center justify-center gap-2 ${
-          platform === 'ios' ? 'bg-indigo-600' : 'bg-emerald-600'
-        }`}
-      >
-        <Smartphone className="w-4 h-4" />
-        <span>
-          {platform === 'ios'
-            ? `iOS Interactive Demo Preview: Authentic iPhone Frame (${iosAppMode.toUpperCase()} App Prototype). Click screens on the right or tap inside the phone!`
-            : `Android Interactive Demo Preview: Google Material Frame (${androidAppMode.toUpperCase()} App Prototype). Click screens on the right or tap inside the phone!`}
-        </span>
-      </div>
-
-      {/* Control Bar */}
-      <div className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Templates</span>
-          </button>
-          <div>
-            <span className="font-bold text-white text-sm">
-              {platform === 'ios'
-                ? `${iosAppMode === 'food' ? 'Food Delivery' : iosAppMode === 'business' ? 'Business Pro' : iosAppMode === 'fitness' ? 'Fitness & Health' : 'E-Commerce'} App`
-                : `${androidAppMode.toUpperCase()} App`}
-            </span>
-            <span className="text-slate-400 text-xs ml-2 font-mono">
-              ({platform === 'ios' ? 'Apple iOS / Swift' : 'Google Android / Kotlin'})
-            </span>
-          </div>
+      {customization.showPromoBanner && (
+        <div
+          className="text-white text-xs font-semibold py-2 px-4 text-center flex items-center justify-center gap-2 transition-colors"
+          style={{ backgroundColor: customization.primaryColor }}
+        >
+          <Smartphone className="w-4 h-4" />
+          <span>
+            {platform === 'ios'
+              ? `iOS Interactive Demo Preview: Authentic iPhone Frame (${iosAppMode.toUpperCase()} App Prototype for ${customization.brandName}). Custom palette & themes live!`
+              : `Android Interactive Demo Preview: Google Material Frame (${androidAppMode.toUpperCase()} App Prototype for ${customization.brandName}). Custom palette & themes live!`}
+          </span>
         </div>
+      )}
 
-        {/* Platform & Sample App Switchers */}
-        <div className="flex items-center gap-2">
-          {/* Platform Toggle */}
-          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800">
-            <button
-              onClick={() => handlePlatformChange('android')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-                platform === 'android'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <span>🤖 Android</span>
-            </button>
-            <button
-              onClick={() => handlePlatformChange('ios')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
-                platform === 'ios'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <span>🍏 iOS</span>
-            </button>
-          </div>
-
-          {/* iOS Sample App Mode Switcher */}
-          {platform === 'ios' && (
-            <div className="hidden sm:flex items-center gap-1 bg-slate-900 p-1 rounded-2xl border border-slate-800 text-xs">
+      {/* Control Bar with Platform Toggle and Theme Customizer */}
+      <DemoControlBar
+        template={{
+          ...template,
+          platform,
+          name: `${customization.brandName} (${platform.toUpperCase()})`
+        }}
+        customization={customization}
+        onBack={onBack}
+        onOpenCustomizer={() => setDrawerOpen(true)}
+        onApplyPalette={applyPalette}
+        onUseDesign={(tmpl, customData) =>
+          onUseDesign(
+            {
+              ...tmpl,
+              platform,
+              name: `${customization.brandName} (${platform.toUpperCase()})`
+            },
+            customData || customization
+          )
+        }
+        titleSuffix={platform === 'ios' ? 'Apple iOS' : 'Google Android'}
+        platformToggle={
+          <div className="flex items-center gap-2">
+            {/* Platform Toggle */}
+            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
               <button
-                onClick={() => handleIosAppModeChange('food')}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  iosAppMode === 'food'
-                    ? 'bg-orange-600 text-white'
+                onClick={() => handlePlatformChange('android')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                  platform === 'android'
+                    ? 'bg-emerald-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Food Delivery
+                <span>🤖 Android</span>
               </button>
               <button
-                onClick={() => handleIosAppModeChange('business')}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  iosAppMode === 'business'
-                    ? 'bg-orange-600 text-white'
+                onClick={() => handlePlatformChange('ios')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                  platform === 'ios'
+                    ? 'bg-indigo-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Business
-              </button>
-              <button
-                onClick={() => handleIosAppModeChange('fitness')}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  iosAppMode === 'fitness'
-                    ? 'bg-orange-600 text-white'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Fitness
-              </button>
-              <button
-                onClick={() => handleIosAppModeChange('ecommerce')}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  iosAppMode === 'ecommerce'
-                    ? 'bg-orange-600 text-white'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                E-Commerce
+                <span>🍏 iOS</span>
               </button>
             </div>
-          )}
-        </div>
 
-        <button
-          onClick={() =>
-            onUseDesign({
-              ...template,
+            {/* iOS Sample App Mode Switcher */}
+            {platform === 'ios' && (
+              <div className="hidden xl:flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+                {(['food', 'business', 'fitness', 'ecommerce'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => handleIosAppModeChange(mode)}
+                    className={`px-2 py-0.5 rounded-md font-bold capitalize transition-all ${
+                      iosAppMode === mode
+                        ? 'text-white'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                    style={{
+                      backgroundColor: iosAppMode === mode ? customization.primaryColor : undefined
+                    }}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        }
+      />
+
+      {/* Slide-over Theme Customizer Drawer */}
+      <DemoCustomizerDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        template={{
+          ...template,
+          platform,
+          name: `${customization.brandName} (${platform.toUpperCase()})`
+        }}
+        customization={customization}
+        onApplyPalette={applyPalette}
+        onUpdateField={updateField}
+        onReset={resetToDefault}
+        onUseDesign={(tmpl, customData) =>
+          onUseDesign(
+            {
+              ...tmpl,
               platform,
-              name: `${template.name} (${platform.toUpperCase()})`
-            })
-          }
-          className="flex items-center gap-2 bg-[#F95700] hover:bg-[#EA4D00] text-white px-5 py-2 rounded-full font-bold text-xs shadow-lg shadow-orange-500/30 transition-all hover:scale-105"
-        >
-          <span>Use This Design</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
+              name: `${customization.brandName} (${platform.toUpperCase()})`
+            },
+            customData || customization
+          )
+        }
+      />
+
+      {/* Floating Customize Button */}
+      <FloatingCustomizeButton
+        onOpen={() => setDrawerOpen(true)}
+        primaryColor={customization.primaryColor}
+      />
 
       {/* Optional Notification Toast */}
       {copiedNotification && (
@@ -334,7 +354,13 @@ export const MobileAppDemo: React.FC<MobileAppDemoProps> = ({
 
             {/* Screen Inner Viewport */}
             <div
-              className={`w-full h-full bg-slate-50 text-slate-800 overflow-hidden flex flex-col justify-between relative shadow-inner ${
+              className={`w-full h-full overflow-hidden flex flex-col justify-between relative shadow-inner transition-colors ${
+                customization.themeMode === 'dark'
+                  ? 'bg-slate-950 text-slate-100'
+                  : customization.themeMode === 'dim'
+                  ? 'bg-slate-900 text-slate-100'
+                  : 'bg-slate-50 text-slate-800'
+              } ${
                 platform === 'ios' ? 'rounded-[44px]' : 'rounded-[36px]'
               }`}
             >
@@ -1852,23 +1878,28 @@ export const MobileAppDemo: React.FC<MobileAppDemoProps> = ({
           <div className="pt-4 border-t border-slate-800 flex flex-col gap-3">
             <button
               onClick={() =>
-                onUseDesign({
-                  ...template,
-                  platform,
-                  name: `${template.name} (${platform.toUpperCase()})`
-                })
+                onUseDesign(
+                  {
+                    ...template,
+                    platform,
+                    name: `${customization.brandName} (${platform.toUpperCase()})`
+                  },
+                  customization
+                )
               }
-              className="w-full flex items-center justify-center gap-2 bg-[#F95700] hover:bg-[#EA4D00] text-white py-3.5 rounded-full font-bold text-xs shadow-lg shadow-orange-500/25 transition-all hover:scale-105"
+              className="w-full flex items-center justify-center gap-2 text-white py-3.5 rounded-full font-bold text-xs shadow-lg transition-all hover:scale-105"
+              style={{ backgroundColor: customization.primaryColor }}
             >
-              <span>Use This Design ({platform.toUpperCase()})</span>
+              <span>Build This {platform.toUpperCase()} App for {customization.brandName}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
             <button
-              onClick={onBack}
-              className="w-full py-2.5 text-xs font-semibold text-slate-400 hover:text-white"
+              onClick={() => setDrawerOpen(true)}
+              className="w-full py-2.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
-              View More {platform.toUpperCase()} Templates &rarr;
+              <Sliders className="w-3.5 h-3.5 text-orange-400" />
+              <span>Customize Colors, Theme & Branding</span>
             </button>
           </div>
         </div>
