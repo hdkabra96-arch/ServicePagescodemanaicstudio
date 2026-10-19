@@ -646,3 +646,206 @@ export const NAVIGATION_STYLES = [
   'Circular Orbital Node Controller with Rotatable Satellites',
   'Spatial Floating Dock with 3D Elevation Cards'
 ];
+
+export interface TemplatePageTab {
+  id: string;
+  label: string;
+}
+
+export function getBusinessTemplatePages(template: BusinessTemplateItem | any): TemplatePageTab[] {
+  if (!template) return [];
+  const code = (template.templateNumber || template.templateCode || '').toString().replace(/\D/g, '');
+  const num = parseInt(code, 10);
+  switch (num) {
+    case 1:
+      return [
+        { id: 'home', label: '1. Home' },
+        { id: 'services', label: '2. Services' },
+        { id: 'about', label: '3. About' },
+        { id: 'packages', label: '4. Packages' },
+        { id: 'contact', label: '5. Contact' }
+      ];
+    case 2:
+      return [
+        { id: 'home', label: '1. Home' },
+        { id: 'services', label: '2. Services' },
+        { id: 'hours', label: '3. Hours & Location' },
+        { id: 'reviews', label: '4. Reviews' },
+        { id: 'estimate', label: '5. Book Appointment' }
+      ];
+    case 3:
+      return [
+        { id: 'home', label: '1. Home' },
+        { id: 'services', label: '2. Services' },
+        { id: 'works', label: '3. Selected Works' },
+        { id: 'studio', label: '4. About Atelier' },
+        { id: 'contact', label: '5. Start Project' }
+      ];
+    case 4:
+      return [
+        { id: 'home', label: '1. Overview' },
+        { id: 'practices', label: '2. Practices' },
+        { id: 'process', label: '3. 4-Step Process' },
+        { id: 'testimonials', label: '4. Testimonials' },
+        { id: 'contact', label: '5. Consultation' }
+      ];
+    case 5:
+      return [
+        { id: 'home', label: '1. Overview' },
+        { id: 'expertise', label: '2. Expertise' },
+        { id: 'advisory', label: '3. Advisory Formats' },
+        { id: 'credentials', label: '4. Credentials' },
+        { id: 'apply', label: '5. Apply' }
+      ];
+    case 6:
+      return [
+        { id: 'platform', label: '1. Platform' },
+        { id: 'treasury', label: '2. Treasury API' },
+        { id: 'security', label: '3. Security Vault' },
+        { id: 'company', label: '4. Company' },
+        { id: 'sandbox', label: '5. Request Sandbox' }
+      ];
+    case 7:
+      return [
+        { id: 'manifesto', label: '1. Manifesto' },
+        { id: 'pillars', label: '2. Pillars' },
+        { id: 'works', label: '3. Case Studies' },
+        { id: 'contact', label: '4. Start Mandate' }
+      ];
+    case 8:
+      return [
+        { id: 'front', label: '1. Front Page' },
+        { id: 'essays', label: '2. Essays' },
+        { id: 'practices', label: '3. Advisory Practices' },
+        { id: 'directorate', label: '4. Directorate' },
+        { id: 'inquiry', label: '5. Private Briefing' }
+      ];
+    case 9:
+      return [
+        { id: 'overview', label: '1. Overview' },
+        { id: 'features', label: '2. Features' },
+        { id: 'telemetry', label: '3. Live Telemetry' },
+        { id: 'pricing', label: '4. Pricing Plans' }
+      ];
+    case 10:
+      return [
+        { id: 'overview', label: '1. Overview' },
+        { id: 'logistics', label: '2. Harbor Logistics' },
+        { id: 'fleet', label: '3. Fleet Telemetry' },
+        { id: 'certs', label: '4. Certifications' },
+        { id: 'rfp', label: '5. Submit RFP' }
+      ];
+    case 11:
+      return [
+        { id: 'overview', label: '1. Overview' },
+        { id: 'sovereign', label: '2. Sovereign Trusts' },
+        { id: 'family-office', label: '3. Family Office' },
+        { id: 'credentials', label: '4. Credentials' },
+        { id: 'consultation', label: '5. Consultation' }
+      ];
+    case 12:
+      return [
+        { id: 'briefing', label: '1. Executive Briefing' },
+        { id: 'mandates', label: '2. M&A Mandates' },
+        { id: 'metrics', label: '3. Market Telemetry' },
+        { id: 'governance', label: '4. Governance' },
+        { id: 'contact', label: '5. Consultation' }
+      ];
+    case 13:
+      return [
+        { id: 'atelier', label: '1. Atelier Home' },
+        { id: 'editions', label: '2. Limited Editions' },
+        { id: 'heritage', label: '3. Heritage' },
+        { id: 'acquisitions', label: '4. Acquisitions' },
+        { id: 'contact', label: '5. Private Client' }
+      ];
+    case 14:
+      return [
+        { id: 'overview', label: '1. Overview' },
+        { id: 'monographs', label: '2. Monographs' },
+        { id: 'materiality', label: '3. Materiality' },
+        { id: 'studios', label: '4. Studios' },
+        { id: 'contact', label: '5. Submit RFQ' }
+      ];
+    case 15:
+      return [
+        { id: 'optics', label: '1. Photonic Optics' },
+        { id: 'waveguides', label: '2. Waveguides' },
+        { id: 'cleanroom', label: '3. Cleanroom' },
+        { id: 'standards', label: '4. Standards' },
+        { id: 'inquire', label: '5. Inquire' }
+      ];
+    case 16:
+      return [
+        { id: 'model', label: '1. 3D Engine' },
+        { id: 'specs', label: '2. Telemetry' },
+        { id: 'mesh', label: '3. Quantum Mesh' },
+        { id: 'kinematics', label: '4. Kinematics' },
+        { id: 'sdk', label: '5. Enterprise SDK' },
+        { id: 'benchmarks', label: '6. Benchmarks' },
+        { id: 'showcase', label: '7. Deployments' },
+        { id: 'hardware', label: '8. Sensor Suite' },
+        { id: 'sandbox', label: '9. 3D Sandbox' },
+        { id: 'licensing', label: '10. Dev Kit' }
+      ];
+    case 17:
+      return [
+        { id: 'reel', label: '1. Director Reel' },
+        { id: 'commercials', label: '2. Commercials' },
+        { id: 'narrative', label: '3. Narrative Films' },
+        { id: 'vfx', label: '4. Motion VFX' },
+        { id: 'audio', label: '5. Atmos Sound' },
+        { id: 'crew', label: '6. Directors & Crew' },
+        { id: 'awards', label: '7. Festival Awards' },
+        { id: 'roster', label: '8. Brand Roster' },
+        { id: 'studios', label: '9. Soundstages' },
+        { id: 'commission', label: '10. Direct Booking' }
+      ];
+    case 18:
+      return [
+        { id: 'terminal', label: '1. Command Center' },
+        { id: 'grid', label: '2. Network Grid' },
+        { id: 'vault', label: '3. Quantum Vault' },
+        { id: 'telemetry', label: '4. Threat Telemetry' },
+        { id: 'edge', label: '5. Edge Nodes' },
+        { id: 'sla', label: '6. 45s SLA' },
+        { id: 'compliance', label: '7. SOC2 Compliance' },
+        { id: 'intel', label: '8. Threat Intel' },
+        { id: 'api', label: '9. API Docs' },
+        { id: 'provision', label: '10. Provision Cluster' }
+      ];
+    case 19:
+      return [
+        { id: 'orbit', label: '1. Celestial Hub' },
+        { id: 'nodes', label: '2. Satellite Fleet' },
+        { id: 'constellation', label: '3. Optical Links' },
+        { id: 'downlink', label: '4. Laser Downlink' },
+        { id: 'command', label: '5. Mission Flight' },
+        { id: 'cislunar', label: '6. Cislunar Relay' },
+        { id: 'algorithms', label: '7. Edge Space AI' },
+        { id: 'ground', label: '8. Ground Stations' },
+        { id: 'simulation', label: '9. Orbit Simulator' },
+        { id: 'launch', label: '10. Launch Mandate' }
+      ];
+    case 20:
+      return [
+        { id: 'canvas', label: '1. Spatial Canvas' },
+        { id: 'environments', label: '2. Volumetric Twins' },
+        { id: 'haptics', label: '3. Haptic Feedback' },
+        { id: 'acoustics', label: '4. Ray-Traced Audio' },
+        { id: 'gestures', label: '5. Biometric Gestures' },
+        { id: 'industrial', label: '6. Industrial Twins' },
+        { id: 'cases', label: '7. Enterprise HQs' },
+        { id: 'hardware', label: '8. 6DoF Hardware' },
+        { id: 'ergonomics', label: '9. Ergonomics' },
+        { id: 'consultation', label: '10. Consultation Desk' }
+      ];
+    default:
+      return [
+        { id: 'home', label: 'Home' },
+        { id: 'services', label: 'Services' },
+        { id: 'about', label: 'About' },
+        { id: 'contact', label: 'Contact' }
+      ];
+  }
+}

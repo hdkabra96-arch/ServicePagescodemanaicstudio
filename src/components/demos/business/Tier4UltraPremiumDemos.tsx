@@ -447,13 +447,92 @@ export const CinematicAgencyDemo: React.FC<TemplateDemoProps> = ({ template, onU
         </main>
       )}
 
-      {activeTab !== 'reel' && activeTab !== 'commission' && (
-        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
-          <span className="font-sans text-xs font-bold text-amber-700 uppercase">Dedicated Page View</span>
-          <h2 className="text-3xl font-black text-stone-900 capitalize">{activeTab} Production Details</h2>
-          <p className="font-sans text-xs text-stone-600 leading-relaxed">
-            Full bespoke production management, 65mm camera packages, and award-winning directors for global brand campaigns.
+      {activeTab === 'commercials' && (
+        <main className="flex-1 py-16 px-8 max-w-5xl mx-auto w-full space-y-8 animate-in fade-in duration-300 font-sans">
+          <span className="text-xs font-bold text-amber-700 uppercase">Page 2 of 10 &bull; Commercial Spots</span>
+          <h2 className="text-3xl font-black text-stone-900">Global Commercial Broadcast Campaigns</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { client: 'Porsche AG', campaign: 'Taycan Turbo GT Launch', award: 'Cannes Lions Silver' },
+              { client: 'Apple TV+', campaign: 'Original Series Title Sequence', award: 'D&AD Yellow Pencil' },
+              { client: 'Rimowa', campaign: 'Never Still Global Documentary', award: 'AICP Winner' }
+            ].map((c, i) => (
+              <div key={i} className="p-6 bg-white border border-amber-200 rounded-2xl shadow-sm space-y-2">
+                <span className="text-xs font-mono font-bold text-amber-700">{c.client}</span>
+                <h4 className="font-bold text-base text-stone-900">{c.campaign}</h4>
+                <p className="text-xs text-amber-600 font-bold">{c.award}</p>
+              </div>
+            ))}
+          </div>
+        </main>
+      )}
+
+      {activeTab === 'narrative' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="text-xs font-bold text-amber-700 uppercase">Page 3 of 10 &bull; Feature Films</span>
+          <h2 className="text-3xl font-black text-stone-900">Narrative &amp; Documentaries</h2>
+          <p className="text-sm text-stone-600 leading-relaxed">
+            From 65mm large-format anamorphic photography to historical restoration, our feature production wing has premiered at Cannes, Venice, and Telluride.
           </p>
+        </main>
+      )}
+
+      {activeTab === 'vfx' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="text-xs font-bold text-amber-700 uppercase">Page 4 of 10 &bull; In-Camera VFX</span>
+          <h2 className="text-3xl font-black text-stone-900">Virtual Production Volume Stages</h2>
+          <p className="text-sm text-stone-600 leading-relaxed">
+            Real-time parallax tracking driven by Unreal Engine 5.4 on our 360-degree curved LED stage in London.
+          </p>
+        </main>
+      )}
+
+      {activeTab === 'audio' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="text-xs font-bold text-amber-700 uppercase">Page 5 of 10 &bull; Spatial Audio</span>
+          <h2 className="text-3xl font-black text-stone-900">Dolby Atmos 9.1.4 Mixing Theaters</h2>
+          <p className="text-sm text-stone-600 leading-relaxed">
+            Certified Dolby Atmos theatrical mastering suites featuring PMC monitoring and bespoke analog mastering chains.
+          </p>
+        </main>
+      )}
+
+      {activeTab === 'crew' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="text-xs font-bold text-amber-700 uppercase">Page 6 of 10 &bull; Directors &amp; Cinematographers</span>
+          <h2 className="text-3xl font-black text-stone-900">Exclusive Talent Roster</h2>
+          <p className="text-sm text-stone-600 leading-relaxed">
+            Representing 18 commercial and documentary filmmakers across the US, UK, and Scandinavia.
+          </p>
+        </main>
+      )}
+
+      {activeTab === 'awards' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="text-xs font-bold text-amber-700 uppercase">Page 7 of 10 &bull; Recognition</span>
+          <h2 className="text-3xl font-black text-stone-900">Festival Honors &amp; Awards</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+            <div className="p-6 bg-white rounded-2xl border border-amber-200 shadow-xs"><div className="text-3xl font-bold text-amber-700">14</div>Cannes Lions</div>
+            <div className="p-6 bg-white rounded-2xl border border-amber-200 shadow-xs"><div className="text-3xl font-bold text-amber-700">8</div>D&amp;AD Pencils</div>
+            <div className="p-6 bg-white rounded-2xl border border-amber-200 shadow-xs"><div className="text-3xl font-bold text-amber-700">3</div>BAFTA Craft</div>
+            <div className="p-6 bg-white rounded-2xl border border-amber-200 shadow-xs"><div className="text-3xl font-bold text-amber-700">22</div>Clios</div>
+          </div>
+        </main>
+      )}
+
+      {activeTab === 'roster' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="text-xs font-bold text-amber-700 uppercase">Page 8 of 10 &bull; Clients</span>
+          <h2 className="text-3xl font-black text-stone-900">Global Brand Collaborations</h2>
+          <p className="text-sm text-stone-600 leading-relaxed">Trusted by world-leading creative agencies: Droga5, Wieden+Kennedy, BBDO, and Ogilvy.</p>
+        </main>
+      )}
+
+      {activeTab === 'studios' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="text-xs font-bold text-amber-700 uppercase">Page 9 of 10 &bull; Facilities</span>
+          <h2 className="text-3xl font-black text-stone-900">40,000 Sq Ft Stage Facilities</h2>
+          <p className="text-sm text-stone-600 leading-relaxed">Equipped with Bolt X high-speed motion control rigs, Phantom 4K Flex cameras, and greenroom suites.</p>
         </main>
       )}
 
@@ -565,11 +644,69 @@ export const NeonInnovationDemo: React.FC<TemplateDemoProps> = ({ template, onUs
         </main>
       )}
 
-      {activeTab !== 'terminal' && activeTab !== 'provision' && (
+      {activeTab === 'grid' && (
         <main className="flex-1 py-16 px-6 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
-          <span className="text-xs text-emerald-700 uppercase font-bold">Page Specification View</span>
-          <h2 className="text-2xl font-black text-emerald-950 capitalize">{activeTab} Architecture</h2>
-          <p className="text-xs text-slate-600">Enterprise defense protocols and zero-knowledge enclave encryption telemetry.</p>
+          <span className="text-xs text-emerald-700 uppercase font-bold">Page 2 of 10 &bull; Topology</span>
+          <h2 className="text-2xl font-black text-emerald-950">340 Zero-Trust Global Edge Grid</h2>
+          <p className="text-xs text-slate-600">Dynamic routing and automated BGP Anycast mesh with instant failover.</p>
+        </main>
+      )}
+
+      {activeTab === 'vault' && (
+        <main className="flex-1 py-16 px-6 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
+          <span className="text-xs text-emerald-700 uppercase font-bold">Page 3 of 10 &bull; Cryptographic Enclave</span>
+          <h2 className="text-2xl font-black text-emerald-950">Kyber-1024 HSM Enclave</h2>
+          <p className="text-xs text-slate-600">Hardware security modules rated FIPS 140-3 Level 4 for critical infrastructure.</p>
+        </main>
+      )}
+
+      {activeTab === 'telemetry' && (
+        <main className="flex-1 py-16 px-6 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
+          <span className="text-xs text-emerald-700 uppercase font-bold">Page 4 of 10 &bull; Live Telemetry</span>
+          <h2 className="text-2xl font-black text-emerald-950">Terabit-Scale DDoS Mitigation</h2>
+          <p className="text-xs text-slate-600">Inline deep packet inspection mitigating Volumetric and Layer-7 HTTP flood attacks.</p>
+        </main>
+      )}
+
+      {activeTab === 'edge' && (
+        <main className="flex-1 py-16 px-6 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
+          <span className="text-xs text-emerald-700 uppercase font-bold">Page 5 of 10 &bull; Edge Compute</span>
+          <h2 className="text-2xl font-black text-emerald-950">Low-Latency Wasm Edge Workers</h2>
+          <p className="text-xs text-slate-600">Execute zero-trust authorization logic in under 2ms directly on incoming requests.</p>
+        </main>
+      )}
+
+      {activeTab === 'sla' && (
+        <main className="flex-1 py-16 px-6 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
+          <span className="text-xs text-emerald-700 uppercase font-bold">Page 6 of 10 &bull; Service Agreement</span>
+          <h2 className="text-2xl font-black text-emerald-950">45-Second Mitigation SLA</h2>
+          <p className="text-xs text-slate-600">Backed by financial penalties and contractual 99.999% uptime guarantees.</p>
+        </main>
+      )}
+
+      {activeTab === 'compliance' && (
+        <main className="flex-1 py-16 px-6 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
+          <span className="text-xs text-emerald-700 uppercase font-bold">Page 7 of 10 &bull; Certifications</span>
+          <h2 className="text-2xl font-black text-emerald-950">SOC2 Type II &amp; ISO 27001 Certified</h2>
+          <p className="text-xs text-slate-600">Continuous automated audit verification with downloadable third-party auditor attestation reports.</p>
+        </main>
+      )}
+
+      {activeTab === 'intel' && (
+        <main className="flex-1 py-16 px-6 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
+          <span className="text-xs text-emerald-700 uppercase font-bold">Page 8 of 10 &bull; Threat Intelligence</span>
+          <h2 className="text-2xl font-black text-emerald-950">Global Zero-Day Vulnerability Feed</h2>
+          <p className="text-xs text-slate-600">Real-time threat signatures synchronized across all protected clusters every 30 seconds.</p>
+        </main>
+      )}
+
+      {activeTab === 'api' && (
+        <main className="flex-1 py-16 px-6 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300">
+          <span className="text-xs text-emerald-700 uppercase font-bold">Page 9 of 10 &bull; Developer API</span>
+          <h2 className="text-2xl font-black text-emerald-950">REST, gRPC &amp; Terraform Providers</h2>
+          <div className="p-4 bg-white border border-emerald-200 rounded-xl text-xs">
+            <code>terraform &#123; required_providers &#123; krypton = &#123; source = &quot;krypton/defense&quot; &#125; &#125; &#125;</code>
+          </div>
         </main>
       )}
 
@@ -666,7 +803,7 @@ export const InteractiveOrbitalDemo: React.FC<TemplateDemoProps> = ({ template, 
           </h1>
           <p className="text-sm text-stone-600 max-w-xl mx-auto">{template.tagline}</p>
           <div className="p-8 bg-white border border-purple-200 rounded-3xl shadow-lg max-w-md mx-auto space-y-4">
-            <div className="w-20 h-20 rounded-full bg-purple-600 text-white mx-auto flex items-center justify-center font-bold text-xs animate-spin-slow">
+            <div className="w-20 h-20 rounded-full bg-purple-600 text-white mx-auto flex items-center justify-center font-bold text-xs">
               ORBIT
             </div>
             <div className="text-xs font-mono font-bold text-purple-900">72 Active Constellation Satellites Synchronized</div>
@@ -674,11 +811,67 @@ export const InteractiveOrbitalDemo: React.FC<TemplateDemoProps> = ({ template, 
         </main>
       )}
 
-      {activeTab !== 'orbit' && activeTab !== 'launch' && (
+      {activeTab === 'nodes' && (
         <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-mono">
-          <span className="text-xs text-purple-700 uppercase font-bold">Aerospace Protocol View</span>
-          <h2 className="text-3xl font-black text-purple-950 capitalize">{activeTab} Mission Specifications</h2>
-          <p className="text-xs text-stone-600">Sub-nanosecond laser synchronization and autonomous space situational awareness tracking.</p>
+          <span className="text-xs text-purple-700 uppercase font-bold">Page 2 of 10 &bull; Satellite Fleet</span>
+          <h2 className="text-3xl font-black text-purple-950">72 LEO Micro-Satellites</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Operated in Sun-Synchronous Orbits at 550km altitude with dual Hall-effect plasma thrusters.</p>
+        </main>
+      )}
+
+      {activeTab === 'constellation' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-mono">
+          <span className="text-xs text-purple-700 uppercase font-bold">Page 3 of 10 &bull; Cross-Links</span>
+          <h2 className="text-3xl font-black text-purple-950">100 Gbps Laser Inter-Satellite Links</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Optical space cross-links eliminating terrestrial routing hops for ultra-low latency worldwide transmission.</p>
+        </main>
+      )}
+
+      {activeTab === 'downlink' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-mono">
+          <span className="text-xs text-purple-700 uppercase font-bold">Page 4 of 10 &bull; Direct Downlink</span>
+          <h2 className="text-3xl font-black text-purple-950">High-Throughput Ground Downlink</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Ka-band and optical laser ground stations delivering 10 Gbps peak download bandwidth to customer terminals.</p>
+        </main>
+      )}
+
+      {activeTab === 'command' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-mono">
+          <span className="text-xs text-purple-700 uppercase font-bold">Page 5 of 10 &bull; Mission Operations</span>
+          <h2 className="text-3xl font-black text-purple-950">Autonomous Flight Dynamics</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Automated orbital conjunction avoidance and real-time space debris maneuvering algorithms.</p>
+        </main>
+      )}
+
+      {activeTab === 'cislunar' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-mono">
+          <span className="text-xs text-purple-700 uppercase font-bold">Page 6 of 10 &bull; Deep Space</span>
+          <h2 className="text-3xl font-black text-purple-950">Cislunar Communications Architecture</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Lunar orbital relay network supporting crewed Artemis lunar base operations and payload telemetry.</p>
+        </main>
+      )}
+
+      {activeTab === 'algorithms' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-mono">
+          <span className="text-xs text-purple-700 uppercase font-bold">Page 7 of 10 &bull; Edge AI Payloads</span>
+          <h2 className="text-3xl font-black text-purple-950">Radiation-Tolerant Neural Accelerators</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Onboard hyperspectral image filtering and real-time weather pattern detection directly in orbit.</p>
+        </main>
+      )}
+
+      {activeTab === 'ground' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-mono">
+          <span className="text-xs text-purple-700 uppercase font-bold">Page 8 of 10 &bull; Global Stations</span>
+          <h2 className="text-3xl font-black text-purple-950">18 Earth Ground Stations</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Distributed terrestrial array across Svalbard, Hawaii, Chile, South Africa, and Western Australia.</p>
+        </main>
+      )}
+
+      {activeTab === 'simulation' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-mono">
+          <span className="text-xs text-purple-700 uppercase font-bold">Page 9 of 10 &bull; Orbital Mechanics</span>
+          <h2 className="text-3xl font-black text-purple-950">Orbital Trajectory Simulation</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Interactive simulation of inclination angle, apogee, perigee, and atmospheric drag decay.</p>
         </main>
       )}
 
@@ -786,11 +979,67 @@ export const FuturisticSpatialDemo: React.FC<TemplateDemoProps> = ({ template, o
         </main>
       )}
 
-      {activeTab !== 'canvas' && activeTab !== 'consultation' && (
-        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-mono">
-          <span className="text-xs text-orange-700 uppercase font-bold">Spatial Engineering View</span>
-          <h2 className="text-3xl font-black text-stone-900 capitalize">{activeTab} Details</h2>
-          <p className="text-xs text-stone-600">Spatial depth rendering protocols, haptic vibration profiles, and ray-traced spatial acoustics.</p>
+      {activeTab === 'environments' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="font-mono text-xs text-orange-700 uppercase font-bold">Page 2 of 10 &bull; Volumetric Twins</span>
+          <h2 className="text-3xl font-black text-stone-900">Enterprise Digital Twin Workspaces</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Photorealistic 3D spatial environments allowing distributed global executive teams to collaborate in shared spatial rooms.</p>
+        </main>
+      )}
+
+      {activeTab === 'haptics' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="font-mono text-xs text-orange-700 uppercase font-bold">Page 3 of 10 &bull; Mid-Air Haptics</span>
+          <h2 className="text-3xl font-black text-stone-900">Ultrasonic Acoustic Force Feedback</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Feel virtual controls, switches, and textures in mid-air with focused ultrasonic wave transducers without gloves.</p>
+        </main>
+      )}
+
+      {activeTab === 'acoustics' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="font-mono text-xs text-orange-700 uppercase font-bold">Page 4 of 10 &bull; 6DoF Audio</span>
+          <h2 className="text-3xl font-black text-stone-900">Ray-Traced Acoustic Physics</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Dynamic binaural sound reflections, room absorption, and Doppler shifts rendered based on exact physical materials.</p>
+        </main>
+      )}
+
+      {activeTab === 'gestures' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="font-mono text-xs text-orange-700 uppercase font-bold">Page 5 of 10 &bull; Micro-Gestures</span>
+          <h2 className="text-3xl font-black text-stone-900">Sub-Millimeter Biometric Gesture Tracking</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">24-joint optical skeletal tracking supporting discrete micro-pinches, swipes, and wrist rotation commands.</p>
+        </main>
+      )}
+
+      {activeTab === 'industrial' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="font-mono text-xs text-orange-700 uppercase font-bold">Page 6 of 10 &bull; CAD Pipeline</span>
+          <h2 className="text-3xl font-black text-stone-900">Direct STEP &amp; IGES CAD Ingestion</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Automated polygon decimation and texture baking for million-part aerospace and automotive assemblies.</p>
+        </main>
+      )}
+
+      {activeTab === 'cases' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="font-mono text-xs text-orange-700 uppercase font-bold">Page 7 of 10 &bull; Deployments</span>
+          <h2 className="text-3xl font-black text-stone-900">Fortune 500 Virtual HQs</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Deployed for sovereign wealth funds, pharmaceutical discovery labs, and architectural design institutes.</p>
+        </main>
+      )}
+
+      {activeTab === 'hardware' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="font-mono text-xs text-orange-700 uppercase font-bold">Page 8 of 10 &bull; Device Matrix</span>
+          <h2 className="text-3xl font-black text-stone-900">VisionOS, Meta Quest Pro &amp; WebXR</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Cross-platform WebXR standard ensuring seamless access on head-mounted displays, iPads, and standard desktop browsers.</p>
+        </main>
+      )}
+
+      {activeTab === 'ergonomics' && (
+        <main className="flex-1 py-16 px-8 max-w-4xl mx-auto w-full space-y-6 animate-in fade-in duration-300 font-sans">
+          <span className="font-mono text-xs text-orange-700 uppercase font-bold">Page 9 of 10 &bull; Comfort Metrics</span>
+          <h2 className="text-3xl font-black text-stone-900">Zero-Motion-Sickness Certification</h2>
+          <p className="text-xs text-stone-600 leading-relaxed">Guaranteed motion-to-photon latency under 11ms with fixed horizon reference anchors for long-session comfort.</p>
         </main>
       )}
 

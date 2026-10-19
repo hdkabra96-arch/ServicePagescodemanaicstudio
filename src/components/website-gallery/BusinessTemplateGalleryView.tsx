@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   Filter,
@@ -23,7 +23,7 @@ import {
   Tag
 } from 'lucide-react';
 import { BusinessTemplateItem } from '../../types';
-import { BUSINESS_TEMPLATES, TIER_DEFINITIONS, NAVIGATION_STYLES } from '../../data/businessTemplates';
+import { BUSINESS_TEMPLATES, TIER_DEFINITIONS, NAVIGATION_STYLES, getBusinessTemplatePages } from '../../data/businessTemplates';
 import { PreviewToolbar, ViewportMode } from './PreviewToolbar';
 import { BusinessTemplateRenderer } from '../demos/business/BusinessTemplateRenderer';
 import { Breadcrumbs } from '../Breadcrumbs';
@@ -32,12 +32,18 @@ interface BusinessTemplateGalleryViewProps {
   onBack: () => void;
   onUseDesign: (template: BusinessTemplateItem) => void;
   onStartProject: (context?: string) => void;
+  initialTemplateCode?: string;
+  initialPageId?: string;
+  onStateChange?: (templateCode?: string, pageId?: string) => void;
 }
 
 export const BusinessTemplateGalleryView: React.FC<BusinessTemplateGalleryViewProps> = ({
   onBack,
   onUseDesign,
-  onStartProject
+  onStartProject,
+  initialTemplateCode,
+  initialPageId,
+  onStateChange
 }) => {
   const [selectedTier, setSelectedTier] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -46,207 +52,67 @@ export const BusinessTemplateGalleryView: React.FC<BusinessTemplateGalleryViewPr
   const [sortBy, setSortBy] = useState<'number' | 'price-asc' | 'price-desc' | 'speed'>('number');
 
   // Live preview mode state
-  const [previewTemplate, setPreviewTemplate] = useState<BusinessTemplateItem | null>(null);
-  const [viewport, setViewport] = useState<ViewportMode>('desktop');
-  const [currentPage, setCurrentPage] = useState<string>('');
-
-  // Compute available pages for active preview template
-  const templatePages = useMemo(() => {
-    if (!previewTemplate) return [];
-    const num = parseInt((previewTemplate.templateNumber || previewTemplate.templateCode || '').replace(/\D/g, ''), 10);
-    switch (num) {
-      case 1:
-        return [
-          { id: 'home', label: 'Home' },
-          { id: 'services', label: 'Services' },
-          { id: 'about', label: 'About' },
-          { id: 'pricing', label: 'Pricing' },
-          { id: 'contact', label: 'Contact' }
-        ];
-      case 2:
-        return [
-          { id: 'home', label: 'Home' },
-          { id: 'services', label: 'Services' },
-          { id: 'hours', label: 'Hours & Location' },
-          { id: 'reviews', label: 'Reviews' },
-          { id: 'estimate', label: 'Book Appointment' }
-        ];
-      case 3:
-        return [
-          { id: 'home', label: 'Home' },
-          { id: 'services', label: 'Services' },
-          { id: 'works', label: 'Selected Works' },
-          { id: 'studio', label: 'About Atelier' },
-          { id: 'contact', label: 'Start Project' }
-        ];
-      case 4:
-        return [
-          { id: 'home', label: 'Overview' },
-          { id: 'practices', label: 'Practices' },
-          { id: 'process', label: '4-Step Process' },
-          { id: 'testimonials', label: 'Testimonials' },
-          { id: 'contact', label: 'Consultation' }
-        ];
-      case 5:
-        return [
-          { id: 'home', label: 'Overview' },
-          { id: 'expertise', label: 'Expertise' },
-          { id: 'advisory', label: 'Advisory Formats' },
-          { id: 'credentials', label: 'Credentials' },
-          { id: 'apply', label: 'Apply' }
-        ];
-      case 6:
-        return [
-          { id: 'platform', label: 'Platform' },
-          { id: 'treasury', label: 'Treasury API' },
-          { id: 'security', label: 'Security Vault' },
-          { id: 'company', label: 'Company' },
-          { id: 'sandbox', label: 'Request Sandbox' }
-        ];
-      case 7:
-        return [
-          { id: 'manifesto', label: 'Manifesto' },
-          { id: 'pillars', label: 'Pillars' },
-          { id: 'works', label: 'Case Studies' },
-          { id: 'contact', label: 'Start Mandate' }
-        ];
-      case 8:
-        return [
-          { id: 'front', label: 'Front Page' },
-          { id: 'essays', label: 'Essays' },
-          { id: 'practices', label: 'Advisory Practices' },
-          { id: 'directorate', label: 'Directorate' },
-          { id: 'inquiry', label: 'Private Briefing' }
-        ];
-      case 9:
-        return [
-          { id: 'overview', label: 'Overview' },
-          { id: 'features', label: 'Features' },
-          { id: 'telemetry', label: 'Live Telemetry' },
-          { id: 'pricing', label: 'Pricing Plans' }
-        ];
-      case 10:
-        return [
-          { id: 'overview', label: 'Overview' },
-          { id: 'logistics', label: 'Harbor Logistics' },
-          { id: 'fleet', label: 'Fleet Telemetry' },
-          { id: 'certs', label: 'Certifications' },
-          { id: 'rfp', label: 'Submit RFP' }
-        ];
-      case 11:
-        return [
-          { id: 'overview', label: '1. Overview' },
-          { id: 'sovereign', label: '2. Sovereign Trusts' },
-          { id: 'family-office', label: '3. Family Office' },
-          { id: 'credentials', label: '4. Credentials' },
-          { id: 'consultation', label: '5. Consultation' }
-        ];
-      case 12:
-        return [
-          { id: 'briefing', label: '1. Executive Briefing' },
-          { id: 'mandates', label: '2. M&A Mandates' },
-          { id: 'metrics', label: '3. Market Telemetry' },
-          { id: 'governance', label: '4. Governance' },
-          { id: 'contact', label: '5. Consultation' }
-        ];
-      case 13:
-        return [
-          { id: 'atelier', label: '1. Atelier Home' },
-          { id: 'editions', label: '2. Limited Editions' },
-          { id: 'heritage', label: '3. Heritage' },
-          { id: 'acquisitions', label: '4. Acquisitions' },
-          { id: 'contact', label: '5. Private Client' }
-        ];
-      case 14:
-        return [
-          { id: 'overview', label: '1. Overview' },
-          { id: 'monographs', label: '2. Monographs' },
-          { id: 'materiality', label: '3. Materiality' },
-          { id: 'studios', label: '4. Studios' },
-          { id: 'contact', label: '5. Submit RFQ' }
-        ];
-      case 15:
-        return [
-          { id: 'optics', label: '1. Photonic Optics' },
-          { id: 'waveguides', label: '2. Waveguides' },
-          { id: 'cleanroom', label: '3. Cleanroom' },
-          { id: 'standards', label: '4. Standards' },
-          { id: 'inquire', label: '5. Inquire' }
-        ];
-      case 16:
-        return [
-          { id: 'model', label: '1. 3D Engine' },
-          { id: 'specs', label: '2. Telemetry' },
-          { id: 'mesh', label: '3. Quantum Mesh' },
-          { id: 'kinematics', label: '4. Kinematics' },
-          { id: 'sdk', label: '5. Enterprise SDK' },
-          { id: 'benchmarks', label: '6. Benchmarks' },
-          { id: 'showcase', label: '7. Deployments' },
-          { id: 'hardware', label: '8. Sensor Suite' },
-          { id: 'sandbox', label: '9. 3D Sandbox' },
-          { id: 'licensing', label: '10. Dev Kit' }
-        ];
-      case 17:
-        return [
-          { id: 'reel', label: '1. Director Reel' },
-          { id: 'commercials', label: '2. Commercials' },
-          { id: 'narrative', label: '3. Narrative Films' },
-          { id: 'vfx', label: '4. Motion VFX' },
-          { id: 'audio', label: '5. Atmos Sound' },
-          { id: 'crew', label: '6. Directors & Crew' },
-          { id: 'awards', label: '7. Festival Awards' },
-          { id: 'roster', label: '8. Brand Roster' },
-          { id: 'studios', label: '9. Soundstages' },
-          { id: 'commission', label: '10. Direct Booking' }
-        ];
-      case 18:
-        return [
-          { id: 'terminal', label: '1. Command Center' },
-          { id: 'grid', label: '2. Network Grid' },
-          { id: 'vault', label: '3. Quantum Vault' },
-          { id: 'telemetry', label: '4. Threat Telemetry' },
-          { id: 'edge', label: '5. Edge Nodes' },
-          { id: 'sla', label: '6. 45s SLA' },
-          { id: 'compliance', label: '7. SOC2 Compliance' },
-          { id: 'intel', label: '8. Threat Intel' },
-          { id: 'api', label: '9. API Docs' },
-          { id: 'provision', label: '10. Provision Cluster' }
-        ];
-      case 19:
-        return [
-          { id: 'orbit', label: '1. Celestial Hub' },
-          { id: 'nodes', label: '2. Satellite Fleet' },
-          { id: 'constellation', label: '3. Optical Links' },
-          { id: 'downlink', label: '4. Laser Downlink' },
-          { id: 'command', label: '5. Mission Flight' },
-          { id: 'cislunar', label: '6. Cislunar Relay' },
-          { id: 'algorithms', label: '7. Edge Space AI' },
-          { id: 'ground', label: '8. Ground Stations' },
-          { id: 'simulation', label: '9. Orbit Simulator' },
-          { id: 'launch', label: '10. Launch Mandate' }
-        ];
-      case 20:
-        return [
-          { id: 'canvas', label: '1. Spatial Canvas' },
-          { id: 'environments', label: '2. Volumetric Twins' },
-          { id: 'haptics', label: '3. Haptic Feedback' },
-          { id: 'acoustics', label: '4. Ray-Traced Audio' },
-          { id: 'gestures', label: '5. Biometric Gestures' },
-          { id: 'industrial', label: '6. Industrial Twins' },
-          { id: 'cases', label: '7. Enterprise HQs' },
-          { id: 'hardware', label: '8. 6DoF Hardware' },
-          { id: 'ergonomics', label: '9. Ergonomics' },
-          { id: 'consultation', label: '10. Consultation Desk' }
-        ];
-      default:
-        return [
-          { id: 'home', label: 'Home' },
-          { id: 'services', label: 'Services' },
-          { id: 'about', label: 'About' },
-          { id: 'pricing', label: 'Pricing' },
-          { id: 'contact', label: 'Contact' }
-        ];
+  const [previewTemplate, setPreviewTemplate] = useState<BusinessTemplateItem | null>(() => {
+    if (initialTemplateCode) {
+      const clean = initialTemplateCode.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return (
+        BUSINESS_TEMPLATES.find(
+          (t) =>
+            t.templateCode.toLowerCase().replace(/[^a-z0-9]/g, '') === clean ||
+            t.slug.toLowerCase().replace(/[^a-z0-9]/g, '') === clean ||
+            t.name.toLowerCase().replace(/[^a-z0-9]/g, '') === clean
+        ) || null
+      );
     }
+    return null;
+  });
+  const [viewport, setViewport] = useState<ViewportMode>('desktop');
+  const [currentPage, setCurrentPage] = useState<string>(initialPageId || '');
+
+  // Synchronize when initialTemplateCode or initialPageId change from browser URL
+  useEffect(() => {
+    if (initialTemplateCode) {
+      const clean = initialTemplateCode.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const matched = BUSINESS_TEMPLATES.find(
+        (t) =>
+          t.templateCode.toLowerCase().replace(/[^a-z0-9]/g, '') === clean ||
+          t.slug.toLowerCase().replace(/[^a-z0-9]/g, '') === clean ||
+          t.name.toLowerCase().replace(/[^a-z0-9]/g, '') === clean
+      );
+      if (matched && matched.id !== previewTemplate?.id) {
+        setPreviewTemplate(matched);
+      }
+    } else if (!initialTemplateCode && previewTemplate) {
+      setPreviewTemplate(null);
+    }
+
+    if (initialPageId !== undefined && initialPageId !== currentPage) {
+      setCurrentPage(initialPageId);
+    }
+  }, [initialTemplateCode, initialPageId]);
+
+  const handleOpenPreview = (tmpl: BusinessTemplateItem) => {
+    setPreviewTemplate(tmpl);
+    const pages = getBusinessTemplatePages(tmpl);
+    const firstPage = pages[0]?.id || '';
+    setCurrentPage(firstPage);
+    onStateChange?.(tmpl.templateCode, firstPage);
+  };
+
+  const handleSelectPage = (pageId: string) => {
+    setCurrentPage(pageId);
+    onStateChange?.(previewTemplate?.templateCode, pageId);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewTemplate(null);
+    setCurrentPage('');
+    onStateChange?.(undefined, undefined);
+  };
+
+  // Compute available pages for active preview template using shared helper
+  const templatePages = useMemo(() => {
+    return getBusinessTemplatePages(previewTemplate);
   }, [previewTemplate]);
 
   // Extract all unique industry tags across the 20 templates
@@ -335,13 +201,9 @@ export const BusinessTemplateGalleryView: React.FC<BusinessTemplateGalleryViewPr
           template={previewTemplate}
           viewport={viewport}
           onViewportChange={(vp) => setViewport(vp)}
-          onBackToGallery={() => {
-            setPreviewTemplate(null);
-            setCurrentPage('');
-          }}
+          onBackToGallery={handleClosePreview}
           onUseDesign={(tmpl) => {
-            setPreviewTemplate(null);
-            setCurrentPage('');
+            handleClosePreview();
             onUseDesign(tmpl);
           }}
         />
@@ -357,7 +219,7 @@ export const BusinessTemplateGalleryView: React.FC<BusinessTemplateGalleryViewPr
             {templatePages.map((page) => (
               <button
                 key={page.id}
-                onClick={() => setCurrentPage(page.id)}
+                onClick={() => handleSelectPage(page.id)}
                 className={`px-3 py-1 rounded-lg font-bold transition-all whitespace-nowrap text-xs flex items-center gap-1.5 ${
                   activePageId === page.id
                     ? 'bg-orange-600 text-white shadow-md ring-2 ring-orange-500/40'
@@ -389,10 +251,9 @@ export const BusinessTemplateGalleryView: React.FC<BusinessTemplateGalleryViewPr
             <BusinessTemplateRenderer
               template={previewTemplate}
               activePage={activePageId}
-              onPageChange={(page) => setCurrentPage(page)}
+              onPageChange={(page) => handleSelectPage(page)}
               onUseDesign={(tmpl) => {
-                setPreviewTemplate(null);
-                setCurrentPage('');
+                handleClosePreview();
                 onUseDesign(tmpl);
               }}
             />
@@ -625,7 +486,7 @@ export const BusinessTemplateGalleryView: React.FC<BusinessTemplateGalleryViewPr
 
                 {/* Quick Live Preview Overlay Trigger */}
                 <button
-                  onClick={() => setPreviewTemplate(template)}
+                  onClick={() => handleOpenPreview(template)}
                   className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs backdrop-blur-[2px] z-20"
                 >
                   <Eye className="w-4 h-4 text-orange-400" />
@@ -692,7 +553,7 @@ export const BusinessTemplateGalleryView: React.FC<BusinessTemplateGalleryViewPr
                   {/* Action Buttons */}
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <button
-                      onClick={() => setPreviewTemplate(template)}
+                      onClick={() => handleOpenPreview(template)}
                       className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold transition-colors"
                     >
                       <Eye className="w-3.5 h-3.5 text-orange-500" />
