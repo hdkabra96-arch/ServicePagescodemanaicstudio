@@ -57,16 +57,19 @@ export const AdminPanelDemo: React.FC<AdminPanelDemoProps> = ({
     drawerOpen,
     setDrawerOpen,
     applyPalette,
+    randomizeTopography,
     updateField,
     resetToDefault,
     getRadiusClass,
     getFontFamilyClass,
+    getFontSizeScaleClass,
+    getCardClasses,
+    getCardStyle,
+    getPrimaryButtonStyle,
+    getBadgeStyle,
     calculateEstimate
   } = useThemeCustomizer(template, {
-    brandName: 'Nexus Operations',
-    primaryColor: '#7C3AED',
-    accentColor: '#C084FC',
-    paletteId: 'purple'
+    brandName: template.name.includes('Operations') || template.name.includes('Admin') ? template.name : 'Nexus Operations Hub'
   });
 
   const monogram = customization.brandName
@@ -87,7 +90,7 @@ export const AdminPanelDemo: React.FC<AdminPanelDemoProps> = ({
         >
           <span className="w-2 h-2 rounded-full bg-white animate-ping" />
           <span>
-            Live Web Application Demo: {customization.brandName} Portal with customized primary palette & operational controls.
+            Live Web Application Demo: {customization.brandName} Portal • Real-time telemetry, compact metrics & customizable topography.
           </span>
         </div>
       )}
@@ -99,6 +102,7 @@ export const AdminPanelDemo: React.FC<AdminPanelDemoProps> = ({
         onBack={onBack}
         onOpenCustomizer={() => setDrawerOpen(true)}
         onApplyPalette={applyPalette}
+        onUpdateField={updateField}
         onUseDesign={onUseDesign}
       />
 
@@ -109,6 +113,7 @@ export const AdminPanelDemo: React.FC<AdminPanelDemoProps> = ({
         template={template}
         customization={customization}
         onApplyPalette={applyPalette}
+        onRandomize={randomizeTopography}
         onUpdateField={updateField}
         onReset={resetToDefault}
         onUseDesign={onUseDesign}

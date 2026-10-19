@@ -33,7 +33,7 @@ export const EnquiryFormView: React.FC<EnquiryFormViewProps> = ({
   const [businessCategory, setBusinessCategory] = useState(selectedTemplate.industryTag || 'Corporate');
   const [preference, setPreference] = useState(
     customizationContext
-      ? `Customized Theme (Color: ${customizationContext.primaryColor}, Font: ${customizationContext.fontFamily})`
+      ? `Customized Topography (Theme: ${customizationContext.brandName}, Primary: ${customizationContext.primaryColor}, Accent: ${customizationContext.accentColor}, Typography: ${customizationContext.fontStyleName || customizationContext.fontFamily}, Scale: ${customizationContext.fontSizeScale || 'balanced'}, Corners: ${customizationContext.borderRadius}, Cards: ${customizationContext.cardVariant || 'modern'})`
       : 'Use this design with my branding'
   );
   const [pages, setPages] = useState('5 – 10 pages');
@@ -203,11 +203,16 @@ export const EnquiryFormView: React.FC<EnquiryFormViewProps> = ({
               />
               <div>
                 <div className="text-xs font-bold text-white flex items-center gap-2">
-                  <span>Custom Theme Applied:</span>
+                  <span>Custom Topography Applied:</span>
                   <span className="text-orange-400 font-extrabold">{customizationContext.brandName}</span>
                 </div>
-                <div className="text-[11px] text-slate-300">
-                  Primary Color: <span className="font-mono font-bold text-white">{customizationContext.primaryColor}</span> • Accent: <span className="font-mono font-bold text-white">{customizationContext.accentColor}</span> • Font: <span className="capitalize">{customizationContext.fontFamily}</span> • Corners: <span className="capitalize">{customizationContext.borderRadius}</span>
+                <div className="text-[11px] text-slate-300 flex flex-wrap items-center gap-x-2 gap-y-1 mt-0.5">
+                  <span>Primary: <span className="font-mono font-bold text-white">{customizationContext.primaryColor}</span></span>
+                  <span>• Accent: <span className="font-mono font-bold text-white">{customizationContext.accentColor}</span></span>
+                  <span>• Typography: <span className="font-semibold text-white">{customizationContext.fontStyleName || customizationContext.fontFamily}</span></span>
+                  <span>• Scale: <span className="uppercase font-mono text-white">{customizationContext.fontSizeScale || 'balanced'}</span></span>
+                  <span>• Corners: <span className="capitalize text-white">{customizationContext.borderRadius}</span></span>
+                  <span>• Card: <span className="capitalize text-white">{customizationContext.cardVariant || 'glass'}</span></span>
                 </div>
               </div>
             </div>

@@ -2,6 +2,7 @@ export type PageView =
   | 'services'
   | 'website-development'
   | 'website-category'
+  | 'business-templates'
   | 'web-application'
   | 'web-app-category'
   | 'app-development'
@@ -41,6 +42,25 @@ export interface TemplateItem {
   features: string[];
   platform?: 'android' | 'ios';
   tags: string[];
+  tier?: 'basic' | 'mid-range' | 'premium' | 'ultra-premium';
+}
+
+export interface BusinessTemplateItem extends TemplateItem {
+  tier: 'basic' | 'mid-range' | 'premium' | 'ultra-premium';
+  tierLabel: 'Basic' | 'Mid-Range' | 'Premium' | 'Ultra Premium';
+  templateNumber: string; // '01' through '20'
+  slug: string;
+  dominantBackground: string;
+  dominantBackgroundName: string;
+  textColor: string;
+  accentColor: string;
+  navigationStyle: string;
+  typographySystem: string;
+  layoutStyle: string;
+  sampleBusinessName: string;
+  tagline: string;
+  estimatedPrice: string;
+  deliveryDays: string;
 }
 
 export interface EnquirySubmission {

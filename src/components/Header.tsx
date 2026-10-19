@@ -30,13 +30,12 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navLinks = [
     { label: 'Home', view: 'services' as PageView, active: currentView === 'services' },
-    { label: 'Product', view: 'services' as PageView, active: false },
-    { label: 'Service', view: 'services' as PageView, active: true }, // Main section highlighted as in screenshot
-    { label: 'Education Hub', view: 'services' as PageView, active: false },
-    { label: 'About Us', view: 'services' as PageView, active: false },
-    { label: 'Blog', view: 'services' as PageView, active: false },
-    { label: 'Contact Us', view: 'enquiry-form' as PageView, active: currentView === 'enquiry-form' },
-    { label: 'Privacy Policy', view: 'services' as PageView, active: false },
+    { label: 'Web Apps', view: 'web-application' as PageView, active: currentView === 'web-application' },
+    { label: 'Mobile Apps', view: 'app-development' as PageView, active: currentView === 'app-development' || currentView === 'app-platform' },
+    { label: 'Websites', view: 'website-development' as PageView, active: currentView === 'website-development' },
+    { label: 'E-commerce', view: 'ecommerce' as PageView, active: currentView === 'ecommerce' },
+    { label: 'Custom Systems', view: 'custom-websites' as PageView, active: currentView === 'custom-websites' },
+    { label: 'Start Project', view: 'enquiry-form' as PageView, active: currentView === 'enquiry-form' }
   ];
 
   return (

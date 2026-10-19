@@ -227,9 +227,16 @@ export const WebsiteDevelopmentView: React.FC<WebsiteDevelopmentViewProps> = ({
               </div>
 
               <div>
-                <h3 className="font-extrabold text-slate-900 text-sm leading-snug group-hover:text-orange-600 transition-colors">
-                  {sol.name}
-                </h3>
+                <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                  <h3 className="font-extrabold text-slate-900 text-sm leading-snug group-hover:text-orange-600 transition-colors">
+                    {sol.name}
+                  </h3>
+                  {(sol as any).badge && (
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+                      {(sol as any).badge}
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
                   {sol.desc}
                 </p>

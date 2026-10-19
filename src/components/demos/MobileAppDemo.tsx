@@ -130,16 +130,19 @@ export const MobileAppDemo: React.FC<MobileAppDemoProps> = ({
     drawerOpen,
     setDrawerOpen,
     applyPalette,
+    randomizeTopography,
     updateField,
     resetToDefault,
     getRadiusClass,
     getFontFamilyClass,
+    getFontSizeScaleClass,
+    getCardClasses,
+    getCardStyle,
+    getPrimaryButtonStyle,
+    getBadgeStyle,
     calculateEstimate
   } = useThemeCustomizer(template, {
-    brandName: template.name.replace(/\s*\(Android\s*App\)|\s*\(iOS\s*App\)/gi, '').trim() || 'MobileApp Pro',
-    primaryColor: platform === 'ios' ? '#4F46E5' : '#059669',
-    accentColor: platform === 'ios' ? '#38BDF8' : '#34D399',
-    paletteId: platform === 'ios' ? 'blue' : 'emerald'
+    brandName: template.name.replace(/\s*\(Android\s*App\)|\s*\(iOS\s*App\)/gi, '').trim() || 'MobileApp Pro'
   });
 
   const showNotification = (msg: string) => {
@@ -228,6 +231,7 @@ export const MobileAppDemo: React.FC<MobileAppDemoProps> = ({
         onBack={onBack}
         onOpenCustomizer={() => setDrawerOpen(true)}
         onApplyPalette={applyPalette}
+        onUpdateField={updateField}
         onUseDesign={(tmpl, customData) =>
           onUseDesign(
             {
@@ -301,6 +305,7 @@ export const MobileAppDemo: React.FC<MobileAppDemoProps> = ({
         }}
         customization={customization}
         onApplyPalette={applyPalette}
+        onRandomize={randomizeTopography}
         onUpdateField={updateField}
         onReset={resetToDefault}
         onUseDesign={(tmpl, customData) =>

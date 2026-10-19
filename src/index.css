@@ -55,3 +55,28 @@
   transform: translateY(-3px);
   box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
 }
+
+/* Typography Topography Font Families */
+.font-luxe-serif {
+  font-family: 'Playfair Display', Georgia, Cambria, 'Times New Roman', serif !important;
+}
+
+.font-tech-mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
+.font-display-modern {
+  font-family: 'Space Grotesk', 'Plus Jakarta Sans', system-ui, sans-serif !important;
+}
+
+.font-creative-syne {
+  font-family: 'Syne', 'Space Grotesk', system-ui, sans-serif !important;
+}
+
+.font-rounded-soft {
+  font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif !important;
+}
+
+.font-sans-clean {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}

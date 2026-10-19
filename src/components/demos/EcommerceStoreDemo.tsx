@@ -48,6 +48,9 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
   onUseDesign
 }) => {
   const [activeCategory, setActiveCategory] = useState<'all' | 'men' | 'women' | 'accessories' | 'footwear'>('all');
+  const [activeStorePage, setActiveStorePage] = useState<'shop' | 'story' | 'reviews' | 'support'>('shop');
+  const [trackingId, setTrackingId] = useState('VC-84920');
+  const [trackedOrder, setTrackedOrder] = useState<any | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
@@ -65,16 +68,20 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
     drawerOpen,
     setDrawerOpen,
     applyPalette,
+    randomizeTopography,
     updateField,
     resetToDefault,
     getRadiusClass,
     getFontFamilyClass,
+    getFontSizeScaleClass,
+    getCardClasses,
+    getCardStyle,
+    getPrimaryButtonStyle,
+    getBadgeStyle,
+    getTopographySummary,
     calculateEstimate
   } = useThemeCustomizer(template, {
-    brandName: 'StyleHub Luxe',
-    primaryColor: '#F95700',
-    accentColor: '#FB923C',
-    paletteId: 'orange'
+    brandName: template.name.includes('Store') || template.name.includes('Luxe') ? template.name : 'Velvet & Co. Luxury Edit'
   });
 
   const products = [
@@ -195,6 +202,7 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
         onBack={onBack}
         onOpenCustomizer={() => setDrawerOpen(true)}
         onApplyPalette={applyPalette}
+        onUpdateField={updateField}
         onUseDesign={onUseDesign}
       />
 
@@ -205,6 +213,7 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
         template={template}
         customization={customization}
         onApplyPalette={applyPalette}
+        onRandomize={randomizeTopography}
         onUpdateField={updateField}
         onReset={resetToDefault}
         onUseDesign={onUseDesign}
@@ -242,38 +251,31 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
           </div>
 
           <nav
-            className={`hidden md:flex items-center space-x-6 text-xs font-semibold ${
-              customization.themeMode === 'light' ? 'text-slate-600' : 'text-slate-300'
-            }`}
+            className={`hidden md:flex items-center space-x-2 text-xs font-semibold`}
           >
-            <button
-              onClick={() => setActiveCategory('all')}
-              style={{ color: activeCategory === 'all' ? customization.primaryColor : undefined }}
-              className="font-bold"
-            >
-              Home
-            </button>
-            <button
-              onClick={() => setActiveCategory('men')}
-              style={{ color: activeCategory === 'men' ? customization.primaryColor : undefined }}
-              className="hover:opacity-75"
-            >
-              Men
-            </button>
-            <button
-              onClick={() => setActiveCategory('women')}
-              style={{ color: activeCategory === 'women' ? customization.primaryColor : undefined }}
-              className="hover:opacity-75"
-            >
-              Women
-            </button>
-            <button
-              onClick={() => setActiveCategory('accessories')}
-              style={{ color: activeCategory === 'accessories' ? customization.primaryColor : undefined }}
-              className="hover:opacity-75"
-            >
-              Accessories
-            </button>
+            {[
+              { id: 'shop' as const, label: 'Storefront & Products' },
+              { id: 'story' as const, label: 'Brand Heritage' },
+              { id: 'reviews' as const, label: 'Customer Reviews' },
+              { id: 'support' as const, label: 'Track Order & FAQ' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveStorePage(tab.id)}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                  activeStorePage === tab.id
+                    ? 'text-white shadow-xs'
+                    : customization.themeMode === 'light'
+                    ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                }`}
+                style={{
+                  backgroundColor: activeStorePage === tab.id ? customization.primaryColor : undefined
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
           </nav>
 
           <div className="flex items-center gap-3">
@@ -294,187 +296,405 @@ export const EcommerceStoreDemo: React.FC<EcommerceStoreDemoProps> = ({
           </div>
         </header>
 
-        {/* Hero Section */}
-        <section
-          className={`relative py-16 px-6 overflow-hidden ${
+        {/* Storefront Pages Quick Switcher */}
+        <div
+          className={`border-b px-6 py-2 flex items-center justify-between text-xs overflow-x-auto ${
             customization.themeMode === 'light'
-              ? 'bg-gradient-to-r from-orange-50/50 via-amber-50/40 to-rose-50/40'
-              : 'bg-slate-900/60'
+              ? 'bg-slate-50 border-slate-200 text-slate-600'
+              : 'bg-slate-900/60 border-slate-800 text-slate-400'
           }`}
         >
-          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div className="space-y-4">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="font-bold text-[11px] uppercase tracking-wider text-slate-400">
+              E-Commerce Pages:
+            </span>
+            <div className="flex items-center gap-1">
+              {[
+                { id: 'shop' as const, label: '🛍️ Storefront' },
+                { id: 'story' as const, label: '📜 Brand Story' },
+                { id: 'reviews' as const, label: '⭐ Reviews (4.9)' },
+                { id: 'support' as const, label: '📦 Track Order' }
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setActiveStorePage(p.id)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${
+                    activeStorePage === p.id ? 'text-white shadow-xs' : 'hover:text-slate-200'
+                  }`}
+                  style={{
+                    backgroundColor: activeStorePage === p.id ? customization.primaryColor : undefined
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="hidden sm:flex items-center gap-1 font-bold text-[11px] hover:underline shrink-0"
+            style={{ color: customization.primaryColor }}
+          >
+            <Sliders className="w-3 h-3" />
+            <span>Customize Storefront Topography</span>
+          </button>
+        </div>
+
+        {/* VIEW 1: STOREFRONT & PRODUCTS */}
+        {activeStorePage === 'shop' && (
+          <div className="animate-in fade-in duration-200">
+            {/* Hero Section */}
+            <section
+              className={`relative py-16 px-6 overflow-hidden ${
+                customization.themeMode === 'light'
+                  ? 'bg-gradient-to-r from-orange-50/50 via-amber-50/40 to-rose-50/40'
+                  : 'bg-slate-900/60'
+              }`}
+            >
+              <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div className="space-y-4">
+                  <span
+                    className={`font-extrabold tracking-wider uppercase inline-block ${getRadiusClass('badge')} ${getFontSizeScaleClass('badge')}`}
+                    style={getBadgeStyle()}
+                  >
+                    New Season &bull; 2026 Collection
+                  </span>
+                  <h1 className={`${getFontSizeScaleClass('hero-title')} leading-tight`}>
+                    {customization.brandName} <br />
+                    <span style={{ color: customization.primaryColor }}>Signature Edit</span>
+                  </h1>
+                  <p className={`text-slate-500 max-w-md ${getFontSizeScaleClass('body')}`}>
+                    {customization.tagline}
+                  </p>
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      onClick={() => setActiveCategory('all')}
+                      className={`flex items-center gap-2 transition-transform hover:scale-105 ${getRadiusClass('btn')} ${getFontSizeScaleClass('btn')}`}
+                      style={getPrimaryButtonStyle()}
+                    >
+                      <span>{customization.ctaText}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDrawerOpen(true)}
+                      className={`font-bold border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${getRadiusClass('btn')} ${getFontSizeScaleClass('btn')}`}
+                    >
+                      Customize Topography
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <div className={`overflow-hidden shadow-xl aspect-4/3 max-w-md mx-auto ${getRadiusClass('card')}`}>
+                    <img
+                      src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80"
+                      alt="Fashion model"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* 4 Trust Highlights */}
+            {customization.showBadges && (
+              <section
+                className={`border-y py-6 px-6 ${
+                  customization.themeMode === 'light'
+                    ? 'border-slate-100 bg-white'
+                    : 'border-slate-800 bg-slate-900/40'
+                }`}
+              >
+                <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="flex items-center gap-3">
+                    <Truck className="w-6 h-6 shrink-0" style={{ color: customization.primaryColor }} />
+                    <div>
+                      <h5 className="font-bold text-xs">Free Shipping</h5>
+                      <p className="text-[11px] text-slate-500">On all prepaid orders</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <RotateCcw className="w-6 h-6 shrink-0" style={{ color: customization.primaryColor }} />
+                    <div>
+                      <h5 className="font-bold text-xs">Easy Returns</h5>
+                      <p className="text-[11px] text-slate-500">7-day hassle-free policy</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="w-6 h-6 shrink-0" style={{ color: customization.primaryColor }} />
+                    <div>
+                      <h5 className="font-bold text-xs">Secure Payment</h5>
+                      <p className="text-[11px] text-slate-500">256-bit encrypted checkout</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Headphones className="w-6 h-6 shrink-0" style={{ color: customization.primaryColor }} />
+                    <div>
+                      <h5 className="font-bold text-xs">24/7 Support</h5>
+                      <p className="text-[11px] text-slate-500">Always here to assist</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Shop by Category Tabs */}
+            <section className="py-12 px-6 max-w-6xl mx-auto">
+              <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+                <div>
+                  <h2 className="text-2xl font-black">Shop by Category</h2>
+                  <p className="text-xs text-slate-500 mt-1">Curated selections for every aesthetic.</p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {(['all', 'men', 'women', 'accessories', 'footwear'] as const).map((cat) => {
+                    const isActive = activeCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-full capitalize transition-colors ${
+                          isActive
+                            ? 'text-white shadow-sm'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:opacity-80'
+                        }`}
+                        style={{ backgroundColor: isActive ? customization.primaryColor : undefined }}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Product Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {filteredProducts.map((prod) => (
+                  <div
+                    key={prod.id}
+                    className={getCardClasses('group hover:scale-[1.01] transition-all duration-300 overflow-hidden flex flex-col justify-between')}
+                    style={getCardStyle()}
+                  >
+                    <div>
+                      <div className="relative aspect-4/5 overflow-hidden bg-slate-100">
+                        <img
+                          src={prod.img}
+                          alt={prod.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <span
+                          className={`absolute top-3 left-3 shadow-xs font-bold ${getRadiusClass('badge')} ${getFontSizeScaleClass('badge')}`}
+                          style={getBadgeStyle()}
+                        >
+                          {prod.badge}
+                        </span>
+                      </div>
+
+                      <div className="p-4 space-y-1.5">
+                        <div className="flex items-center gap-1 text-amber-500 text-xs">
+                          <Star className="w-3.5 h-3.5 fill-amber-500" />
+                          <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px]">{prod.rating}</span>
+                        </div>
+                        <h4 className={`font-bold ${getFontSizeScaleClass('heading-md')}`}>
+                          {prod.name}
+                        </h4>
+                        <div className="font-mono font-bold text-base" style={{ color: customization.primaryColor }}>
+                          ₹{prod.price.toLocaleString('en-IN')}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 pt-0">
+                      <button
+                        onClick={() => addToCart(prod)}
+                        className={`w-full font-bold shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 ${getRadiusClass('btn')} ${getFontSizeScaleClass('btn')}`}
+                        style={getPrimaryButtonStyle()}
+                      >
+                        <ShoppingCart className="w-3.5 h-3.5" />
+                        <span>Add to Cart</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* VIEW 2: BRAND STORY */}
+        {activeStorePage === 'story' && (
+          <div className="animate-in fade-in duration-200 max-w-5xl mx-auto px-6 py-16 space-y-12">
+            <div className="text-center max-w-xl mx-auto space-y-3">
               <span
-                className="font-extrabold text-xs tracking-wider uppercase px-2.5 py-0.5 rounded-full inline-block"
+                className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border inline-block"
                 style={{
                   color: customization.primaryColor,
-                  backgroundColor: `${customization.primaryColor}15`
+                  borderColor: `${customization.primaryColor}30`,
+                  backgroundColor: `${customization.primaryColor}10`
                 }}
               >
-                New Season &bull; 2026 Collection
+                Our Heritage
               </span>
-              <h1 className="text-4xl sm:text-5xl font-black leading-tight">
-                {customization.brandName} <br />
-                <span style={{ color: customization.primaryColor }}>Signature Edit</span>
+              <h1 className="text-3xl font-extrabold tracking-tight">
+                Crafted with Intention & Elegance
               </h1>
-              <p className="text-slate-500 text-sm max-w-md leading-relaxed">
-                {customization.tagline}
+              <p className="text-xs text-slate-400">
+                Discover the artisanal journey and sustainable ethos of {customization.brandName}.
               </p>
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  onClick={() => setActiveCategory('all')}
-                  className={`text-white px-7 py-3 text-xs font-bold shadow-md flex items-center gap-2 transition-transform hover:scale-105 ${getRadiusClass('btn')}`}
-                  style={{ backgroundColor: customization.primaryColor }}
-                >
-                  <span>{customization.ctaText}</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setDrawerOpen(true)}
-                  className={`px-4 py-3 text-xs font-bold border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${getRadiusClass('btn')}`}
-                >
-                  Customize Colors
-                </button>
-              </div>
             </div>
 
-            <div className="relative">
-              <div className={`overflow-hidden shadow-xl aspect-4/3 max-w-md mx-auto ${getRadiusClass('card')}`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+              <div className="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                <h3 className="text-xl font-bold text-white">The Pursuit of Flawless Aesthetics</h3>
+                <p>
+                  Every piece in the <strong>{customization.brandName}</strong> catalog is produced with ethically-sourced materials, fine organic fabrics, and precision hand-finished hardware.
+                </p>
+                <p>
+                  We collaborate with heritage workshops across Milan, Kyoto, and London to bring you wardrobe essentials that outlive ephemeral fashion seasons.
+                </p>
+                <div className="pt-2 flex items-center gap-4 text-xs font-bold text-white">
+                  <span className="flex items-center gap-1.5">
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    100% Carbon-Neutral Shipping
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Check className="w-4 h-4 text-emerald-400" />
+                    Zero Toxic Dyes
+                  </span>
+                </div>
+              </div>
+
+              <div className="aspect-4/3 rounded-2xl overflow-hidden shadow-2xl border border-slate-700">
                 <img
-                  src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80"
-                  alt="Fashion model"
+                  src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=800&auto=format&fit=crop&q=80"
+                  alt="Workshop crafting"
                   className="w-full h-full object-cover"
                 />
               </div>
             </div>
           </div>
-        </section>
-
-        {/* 4 Trust Highlights */}
-        {customization.showBadges && (
-          <section
-            className={`border-y py-6 px-6 ${
-              customization.themeMode === 'light'
-                ? 'border-slate-100 bg-white'
-                : 'border-slate-800 bg-slate-900/40'
-            }`}
-          >
-            <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="flex items-center gap-3">
-                <Truck className="w-6 h-6 shrink-0" style={{ color: customization.primaryColor }} />
-                <div>
-                  <h5 className="font-bold text-xs">Free Shipping</h5>
-                  <p className="text-[11px] text-slate-500">On all prepaid orders</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <RotateCcw className="w-6 h-6 shrink-0" style={{ color: customization.primaryColor }} />
-                <div>
-                  <h5 className="font-bold text-xs">Easy Returns</h5>
-                  <p className="text-[11px] text-slate-500">7-day hassle-free policy</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <ShieldCheck className="w-6 h-6 shrink-0" style={{ color: customization.primaryColor }} />
-                <div>
-                  <h5 className="font-bold text-xs">Secure Payment</h5>
-                  <p className="text-[11px] text-slate-500">256-bit encrypted checkout</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Headphones className="w-6 h-6 shrink-0" style={{ color: customization.primaryColor }} />
-                <div>
-                  <h5 className="font-bold text-xs">24/7 Support</h5>
-                  <p className="text-[11px] text-slate-500">Always here to assist</p>
-                </div>
-              </div>
-            </div>
-          </section>
         )}
 
-        {/* Shop by Category Tabs */}
-        <section className="py-12 px-6 max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-            <div>
-              <h2 className="text-2xl font-black">Shop by Category</h2>
-              <p className="text-xs text-slate-500 mt-1">Curated selections for every aesthetic.</p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {(['all', 'men', 'women', 'accessories', 'footwear'] as const).map((cat) => {
-                const isActive = activeCategory === cat;
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-full capitalize transition-colors ${
-                      isActive
-                        ? 'text-white shadow-sm'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:opacity-80'
-                    }`}
-                    style={{ backgroundColor: isActive ? customization.primaryColor : undefined }}
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Product Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredProducts.map((prod) => (
-              <div
-                key={prod.id}
-                className={`group border hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between ${getRadiusClass('card')} ${
-                  customization.themeMode === 'light'
-                    ? 'bg-white border-slate-100 hover:border-slate-300'
-                    : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-                }`}
+        {/* VIEW 3: CUSTOMER REVIEWS */}
+        {activeStorePage === 'reviews' && (
+          <div className="animate-in fade-in duration-200 max-w-5xl mx-auto px-6 py-16 space-y-12">
+            <div className="text-center max-w-xl mx-auto space-y-3">
+              <span
+                className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border inline-block"
+                style={{
+                  color: customization.primaryColor,
+                  borderColor: `${customization.primaryColor}30`,
+                  backgroundColor: `${customization.primaryColor}10`
+                }}
               >
-                <div>
-                  <div className="relative aspect-4/5 overflow-hidden bg-slate-100">
-                    <img
-                      src={prod.img}
-                      alt={prod.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <span
-                      className="absolute top-3 left-3 bg-white/95 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-xs"
-                      style={{ color: customization.primaryColor }}
-                    >
-                      {prod.badge}
-                    </span>
-                  </div>
+                Customer Love
+              </span>
+              <h1 className="text-3xl font-extrabold tracking-tight">
+                4.9 / 5.0 from 1,420+ Buyers
+              </h1>
+              <p className="text-xs text-slate-400">
+                Verified reviews from verified shoppers of {customization.brandName}.
+              </p>
+            </div>
 
-                  <div className="p-4 space-y-1.5">
-                    <div className="flex items-center gap-1 text-amber-500 text-xs">
-                      <Star className="w-3.5 h-3.5 fill-amber-500" />
-                      <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px]">{prod.rating}</span>
-                    </div>
-                    <h4 className="font-bold text-sm">
-                      {prod.name}
-                    </h4>
-                    <div className="font-mono font-bold text-base">
-                      ₹{prod.price.toLocaleString('en-IN')}
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { name: 'Aarav Singhania', role: 'Verified Buyer', rating: 5, date: 'Yesterday', review: 'The material feel and stitching precision of the jacket surpassed my expectations. Arrived in 2 days in luxurious recyclable packaging.' },
+                { name: 'Sophie Laurent', role: 'Verified Buyer', rating: 5, date: '3 days ago', review: 'The minimalist watch has an incredible weight and clean face. I get compliments on it every single day at work.' },
+                { name: 'Kavita Menon', role: 'Verified Buyer', rating: 5, date: '1 week ago', review: 'Evening dress fit was exact to size. Color accuracy matched the online preview 100%. Highly recommended!' }
+              ].map((rev, i) => (
+                <div
+                  key={i}
+                  className={getCardClasses('p-6 space-y-3')}
+                  style={getCardStyle()}
+                >
+                  <div className="flex items-center gap-1 text-amber-400">
+                    {Array.from({ length: rev.rating }).map((_, idx) => (
+                      <Star key={idx} className="w-3.5 h-3.5 fill-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed italic">"{rev.review}"</p>
+                  <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-white">{rev.name}</span>
+                    <span className="text-emerald-400 font-semibold">{rev.role}</span>
                   </div>
                 </div>
-
-                <div className="p-4 pt-0">
-                  <button
-                    onClick={() => addToCart(prod)}
-                    className={`w-full text-white py-2.5 font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 ${getRadiusClass('btn')}`}
-                    style={{ backgroundColor: customization.primaryColor }}
-                  >
-                    <ShoppingCart className="w-3.5 h-3.5" />
-                    <span>Add to Cart</span>
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </section>
+        )}
+
+        {/* VIEW 4: ORDER TRACKING & SUPPORT */}
+        {activeStorePage === 'support' && (
+          <div className="animate-in fade-in duration-200 max-w-4xl mx-auto px-6 py-16 space-y-12">
+            <div className="text-center max-w-xl mx-auto space-y-3">
+              <span
+                className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border inline-block"
+                style={{
+                  color: customization.primaryColor,
+                  borderColor: `${customization.primaryColor}30`,
+                  backgroundColor: `${customization.primaryColor}10`
+                }}
+              >
+                Order Support
+              </span>
+              <h1 className="text-3xl font-extrabold tracking-tight">
+                Live Order Dispatch Tracking
+              </h1>
+              <p className="text-xs text-slate-400">
+                Track your package status or contact the {customization.brandName} concierge.
+              </p>
+            </div>
+
+            {/* Interactive Order Tracker */}
+            <div
+              className={getCardClasses('p-8 space-y-6 max-w-xl mx-auto')}
+              style={getCardStyle()}
+            >
+              <h3 className="font-bold text-sm text-white">Enter Tracking or Order Number</h3>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={trackingId}
+                  onChange={(e) => setTrackingId(e.target.value)}
+                  className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 text-white text-xs rounded-lg uppercase"
+                />
+                <button
+                  onClick={() => setTrackedOrder({
+                    id: trackingId,
+                    status: 'Out for Delivery via Express Courier',
+                    eta: 'Today by 5:00 PM',
+                    carrier: 'BlueDart / FedEx Priority',
+                    location: 'Local Sorting Facility - In Transit'
+                  })}
+                  className="px-5 py-2 font-bold text-xs text-white rounded-lg shadow-md"
+                  style={{ backgroundColor: customization.primaryColor }}
+                >
+                  Track Package
+                </button>
+              </div>
+
+              {trackedOrder && (
+                <div
+                  className="p-4 rounded-xl border space-y-2 animate-in zoom-in-95"
+                  style={{
+                    backgroundColor: `${customization.primaryColor}12`,
+                    borderColor: `${customization.primaryColor}35`
+                  }}
+                >
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-white">Package #{trackedOrder.id}</span>
+                    <span className="text-emerald-400 font-bold">{trackedOrder.status}</span>
+                  </div>
+                  <div className="text-xs text-slate-300">
+                    Carrier: <strong>{trackedOrder.carrier}</strong> &bull; ETA: <strong>{trackedOrder.eta}</strong>
+                  </div>
+                  <p className="text-[11px] text-slate-400">{trackedOrder.location}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
       </div>
 

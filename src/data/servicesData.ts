@@ -117,7 +117,7 @@ export const MORE_SERVICES: ServiceItem[] = [
 ];
 
 export const WEBSITE_SOLUTIONS = [
-  { id: 'business', name: 'Business Websites', icon: 'Globe', color: 'orange', desc: 'Modern and responsive websites to showcase your services.' },
+  { id: 'business', name: 'Business Websites', icon: 'Globe', color: 'orange', badge: '20 Unique Demos (4 Tiers)', desc: 'Dedicated 20-template library across 4 tiers with interactive live previews.' },
   { id: 'corporate', name: 'Corporate Websites', icon: 'BarChart3', color: 'blue', desc: 'Professional online presence for growing corporate brands.' },
   { id: 'portfolio', name: 'Portfolio Websites', icon: 'User', color: 'pink', desc: 'Stunning showcases for creatives, freelancers & agencies.' },
   { id: 'landing', name: 'Landing Pages', icon: 'FileText', color: 'teal', desc: 'High-converting sales and marketing lead-gen pages.' },

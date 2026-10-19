@@ -30,6 +30,7 @@ import { CorporateWebsiteDemo } from './components/demos/CorporateWebsiteDemo';
 import { BookingSystemDemo } from './components/demos/BookingSystemDemo';
 import { StudentManagementDemo } from './components/demos/StudentManagementDemo';
 import { CategoryShowcaseView } from './components/views/CategoryShowcaseView';
+import { BusinessTemplateGalleryView } from './components/website-gallery/BusinessTemplateGalleryView';
 import { EnquiryFormView } from './components/EnquiryFormView';
 import { SuccessView } from './components/SuccessView';
 
@@ -89,6 +90,11 @@ export default function App() {
   const handleOpenCategory = (catId: string, parent: string = 'website-development') => {
     setSelectedCategory(catId);
     setCategoryParentService(parent);
+    if (catId === 'business' || catId === 'business-websites') {
+      setCurrentView('business-templates');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     if (parent === 'web-application') {
       setCurrentView('web-app-category');
     } else if (parent === 'ecommerce') {
@@ -316,8 +322,18 @@ export default function App() {
           />
         )}
 
+        {/* Dedicated Business Website 20-Template Gallery */}
+        {(currentView === 'business-templates' ||
+          (currentView === 'website-category' && (selectedCategory === 'business' || selectedCategory === 'business-websites'))) && (
+          <BusinessTemplateGalleryView
+            onBack={() => handleNavigate('website-development')}
+            onUseDesign={handleUseDesign}
+            onStartProject={handleStartProject}
+          />
+        )}
+
         {/* Dedicated Category Showcase Page (Variety of templates for selected category) */}
-        {(currentView === 'website-category' ||
+        {((currentView === 'website-category' && selectedCategory !== 'business' && selectedCategory !== 'business-websites') ||
           currentView === 'web-app-category' ||
           currentView === 'ecommerce-category' ||
           currentView === 'custom-category') && (
@@ -336,8 +352,12 @@ export default function App() {
               }
             }}
             onSelectCategory={(newCatId) => {
-              setSelectedCategory(newCatId);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              if (newCatId === 'business' || newCatId === 'business-websites') {
+                handleOpenCategory('business', 'website-development');
+              } else {
+                setSelectedCategory(newCatId);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
             }}
             onLivePreview={handleLivePreview}
             onUseDesign={handleUseDesign}

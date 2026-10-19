@@ -51,7 +51,7 @@ const ALL_CATEGORY_DEFINITIONS = [
     parentName: 'Website Development',
     icon: Globe,
     desc: 'High-converting, responsive websites tailored for professional businesses, service agencies, and corporate brands.',
-    badge: '6 Professional Templates'
+    badge: '20 Unique Demos (4 Tiers)'
   },
   {
     id: 'corporate',
