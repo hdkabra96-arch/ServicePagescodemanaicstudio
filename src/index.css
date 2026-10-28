@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --primary-orange: #f95700;
+    --primary-orange-hover: #ea4d00;
+    --navy-heading: #0f172a;
+    --cream-bg: #fbf9f5;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1e293b;
+    background-color: #fbf9f5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #0f172a;
+    font-weight: 700;
+  }
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Subtle glow effects matching Codemaniac reference images */
+.orange-glow {
+  box-shadow: 0 10px 30px -10px rgba(249, 87, 0, 0.35);
+}
+
+.card-hover-shadow {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-hover-shadow:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+}
+
+/* Typography Topography Font Families */
+.font-luxe-serif {
+  font-family: 'Playfair Display', Georgia, Cambria, 'Times New Roman', serif !important;
+}
+
+.font-tech-mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
+.font-display-modern {
+  font-family: 'Space Grotesk', 'Plus Jakarta Sans', system-ui, sans-serif !important;
+}
+
+.font-creative-syne {
+  font-family: 'Syne', 'Space Grotesk', system-ui, sans-serif !important;
+}
+
+.font-rounded-soft {
+  font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif !important;
+}
+
+.font-sans-clean {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
