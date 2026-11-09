@@ -36,6 +36,9 @@ import { PreviewToolbar, ViewportMode } from './components/website-gallery/Previ
 import { BusinessTemplateRenderer } from './components/demos/business/BusinessTemplateRenderer';
 import { EnquiryFormView } from './components/EnquiryFormView';
 import { SuccessView } from './components/SuccessView';
+import { AdminLoginView } from './components/admin/AdminLoginView';
+import { AdminPanelView } from './components/admin/AdminPanelView';
+import { AdminUser } from './types';
 
 // Helper to look up any template by id, code, or slug
 function lookupTemplate(identifier: string): (TemplateItem | BusinessTemplateItem) | undefined {
@@ -74,6 +77,21 @@ export default function App() {
   const [enquiriesModalOpen, setEnquiriesModalOpen] = useState(false);
   const [enquiriesList, setEnquiriesList] = useState<EnquirySubmission[]>([]);
   const [isLoadingEnquiries, setIsLoadingEnquiries] = useState(false);
+
+  // Admin authentication state
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const savedUser = localStorage.getItem('cm_admin_user');
+    const savedToken = localStorage.getItem('cm_admin_token');
+    if (savedUser && savedToken) {
+      try {
+        return JSON.parse(savedUser);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
 
   // Determine canonical URL from application state
   const computeUrl = useCallback(
@@ -117,6 +135,10 @@ export default function App() {
           return `/ecommerce/${category || 'store'}`;
         case 'custom-category':
           return `/custom-websites/${category || 'custom'}`;
+        case 'admin-login':
+          return '/admin/login';
+        case 'admin-panel':
+          return '/admin';
         case 'live-preview': {
           const tmpl = template || activeTemplate;
           const slug = (tmpl as any)?.slug || tmpl?.id || 'preview';
@@ -154,6 +176,23 @@ export default function App() {
     const first = segments[0]?.toLowerCase();
     const second = segments[1]?.toLowerCase();
     const third = segments[2]?.toLowerCase();
+
+    // 0. Admin Portal & Login routes: /admin, /admin/login, /admin-panel
+    if (first === 'admin' || first === 'admin-panel' || first === 'admin-login') {
+      const savedUser = localStorage.getItem('cm_admin_user');
+      const savedToken = localStorage.getItem('cm_admin_token');
+      if (second === 'login' || !savedUser || !savedToken) {
+        setCurrentView('admin-login');
+      } else {
+        try {
+          if (savedUser) setAdminUser(JSON.parse(savedUser));
+        } catch {
+          // ignore
+        }
+        setCurrentView('admin-panel');
+      }
+      return;
+    }
 
     // 1. Live preview route: /preview/:templateSlug or /preview/:templateSlug/:subpage
     if (first === 'preview') {
@@ -316,9 +355,39 @@ export default function App() {
 
   // Navigation handlers with real browser URL sync
   const handleNavigate = (view: PageView) => {
+    if (view === 'admin-panel' && !adminUser) {
+      setCurrentView('admin-login');
+      pushUrl('/admin/login');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (view === 'admin-login' && adminUser) {
+      setCurrentView('admin-panel');
+      pushUrl('/admin');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setCurrentView(view);
     const newUrl = computeUrl(view, selectedCategory, categoryParentService, selectedPlatform, activeTemplate);
     pushUrl(newUrl);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleAdminLoginSuccess = (user: AdminUser, token?: string) => {
+    setAdminUser(user);
+    localStorage.setItem('cm_admin_user', JSON.stringify(user));
+    localStorage.setItem('cm_admin_token', token || user.token || 'cm_sec_active');
+    setCurrentView('admin-panel');
+    pushUrl('/admin');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleAdminLogout = () => {
+    localStorage.removeItem('cm_admin_user');
+    localStorage.removeItem('cm_admin_token');
+    setAdminUser(null);
+    setCurrentView('services');
+    pushUrl('/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -565,10 +634,12 @@ export default function App() {
     }
   };
 
+  const isImmersiveView = currentView === 'live-preview' || currentView === 'admin-panel' || currentView === 'admin-login';
+
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-slate-800 flex flex-col selection:bg-orange-500 selection:text-white">
-      {/* Global Navigation Header (hidden on immersive live preview mode for isolation) */}
-      {currentView !== 'live-preview' && (
+      {/* Global Navigation Header (hidden on live preview and dedicated admin portal) */}
+      {!isImmersiveView && (
         <Header
           currentView={currentView}
           onNavigate={handleNavigate}
@@ -779,10 +850,38 @@ export default function App() {
             onViewMoreDesigns={() => handleNavigate('website-development')}
           />
         )}
+
+        {/* Dedicated Admin Login View */}
+        {currentView === 'admin-login' && (
+          <AdminLoginView
+            onLoginSuccess={handleAdminLoginSuccess}
+            onBackToSite={() => handleNavigate('services')}
+          />
+        )}
+
+        {/* Dedicated Admin Panel & Codebase Downloader View */}
+        {currentView === 'admin-panel' && (
+          adminUser ? (
+            <AdminPanelView
+              adminUser={adminUser}
+              onLogout={handleAdminLogout}
+              onNavigateHome={() => handleNavigate('services')}
+              onPreviewTemplate={(code) => {
+                const found = lookupTemplate(code);
+                if (found) handleLivePreview(found);
+              }}
+            />
+          ) : (
+            <AdminLoginView
+              onLoginSuccess={handleAdminLoginSuccess}
+              onBackToSite={() => handleNavigate('services')}
+            />
+          )
+        )}
       </main>
 
-      {/* Global Footer (hidden in live preview mode) */}
-      {currentView !== 'live-preview' && (
+      {/* Global Footer (hidden on live preview and dedicated admin portal) */}
+      {!isImmersiveView && (
         <Footer onNavigate={handleNavigate} />
       )}
 

@@ -15,7 +15,22 @@ export type PageView =
   | 'custom-category'
   | 'live-preview'
   | 'enquiry-form'
-  | 'success';
+  | 'success'
+  | 'admin-login'
+  | 'admin-panel';
+
+export interface AdminUser {
+  id?: string;
+  adminId: string;
+  username?: string;
+  name?: string;
+  email?: string;
+  role: string;
+  lastLogin?: string;
+  token?: string;
+}
+
+export type Enquiry = EnquirySubmission;
 
 export interface ServiceItem {
   id: string;

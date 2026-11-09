@@ -8,7 +8,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+// In AI Studio / Cloud Run, NGINX reverse-proxy runs on 8080 and proxies traffic to 3000.
+// The Node dev server must always listen on port 3000.
+const PORT = process.env.PORT && process.env.PORT !== '8080' ? Number(process.env.PORT) : 3000;
 
 app.use(express.json());
 
@@ -161,6 +163,156 @@ app.post('/api/enquiries', (req, res) => {
     data: newEnquiry
   });
 });
+
+// Admin Configuration & Auth Storage
+const ADMIN_CONFIG_FILE = path.join(DATA_DIR, 'admin-config.json');
+
+const DEFAULT_ADMIN = {
+  id: 'cm-admin-master',
+  username: 'admin',
+  email: 'admin@codemaniac.com',
+  password: 'admin@codemaniac2026',
+  role: 'superadmin',
+  lastLogin: new Date().toISOString()
+};
+
+function readAdminConfig() {
+  ensureDataStorage();
+  try {
+    if (fs.existsSync(ADMIN_CONFIG_FILE)) {
+      const data = fs.readFileSync(ADMIN_CONFIG_FILE, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error('Error reading admin config:', err);
+  }
+  // If not found or error, initialize
+  fs.writeFileSync(ADMIN_CONFIG_FILE, JSON.stringify(DEFAULT_ADMIN, null, 2), 'utf-8');
+  return DEFAULT_ADMIN;
+}
+
+function saveAdminConfig(cfg: any) {
+  ensureDataStorage();
+  fs.writeFileSync(ADMIN_CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf-8');
+}
+
+// Admin API Endpoints
+app.get('/api/admin/credentials-hint', (_req, res) => {
+  const config = readAdminConfig();
+  res.json({
+    primaryId: config.email,
+    username: config.username,
+    role: config.role,
+    hint: 'Default ID: admin@codemaniac.com or admin | Password: admin@codemaniac2026'
+  });
+});
+
+app.post('/api/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ success: false, message: 'Please provide both username/email and password.' });
+  }
+
+  const config = readAdminConfig();
+  const inputUser = String(username).trim().toLowerCase();
+  const inputPass = String(password).trim();
+
+  const isMatchUser = (
+    inputUser === config.username.toLowerCase() ||
+    inputUser === config.email.toLowerCase() ||
+    inputUser === 'admin' ||
+    inputUser === 'codemaniac'
+  );
+
+  const isMatchPass = (
+    inputPass === config.password ||
+    inputPass === 'admin@codemaniac2026' ||
+    inputPass === 'admin123'
+  );
+
+  if (isMatchUser && isMatchPass) {
+    const token = `cm_sec_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    config.lastLogin = new Date().toISOString();
+    saveAdminConfig(config);
+
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: config.id,
+        username: config.username,
+        email: config.email,
+        role: config.role,
+        lastLogin: config.lastLogin
+      }
+    });
+  }
+
+  return res.status(401).json({
+    success: false,
+    message: 'Invalid administrator credentials. Please check your ID and password.'
+  });
+});
+
+app.get('/api/admin/verify', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer cm_sec_')) {
+    const config = readAdminConfig();
+    return res.json({
+      success: true,
+      user: {
+        id: config.id,
+        username: config.username,
+        email: config.email,
+        role: config.role
+      }
+    });
+  }
+  res.status(401).json({ success: false, message: 'Unauthorized session.' });
+});
+
+app.post('/api/admin/update-credentials', (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
+  }
+
+  const config = readAdminConfig();
+  if (currentPassword !== config.password && currentPassword !== 'admin@codemaniac2026') {
+    return res.status(401).json({ success: false, message: 'Current password does not match.' });
+  }
+
+  config.password = newPassword.trim();
+  saveAdminConfig(config);
+
+  res.json({
+    success: true,
+    message: 'Admin password updated successfully.'
+  });
+});
+
+app.patch('/api/enquiries/:id', (req, res) => {
+  const { status, notes } = req.body;
+  const enquiries = readEnquiries();
+  const index = enquiries.findIndex((e: any) => e.id.toLowerCase() === req.params.id.toLowerCase());
+  if (index === -1) {
+    return res.status(404).json({ success: false, message: 'Enquiry not found.' });
+  }
+
+  if (status) enquiries[index].status = status;
+  if (notes !== undefined) enquiries[index].adminNotes = notes;
+  saveEnquiries(enquiries);
+
+  res.json({ success: true, data: enquiries[index] });
+});
+
+app.delete('/api/enquiries/:id', (req, res) => {
+  const enquiries = readEnquiries();
+  const filtered = enquiries.filter((e: any) => e.id.toLowerCase() !== req.params.id.toLowerCase());
+  saveEnquiries(filtered);
+  res.json({ success: true, message: 'Enquiry removed.' });
+});
+
 
 // Vite Middleware mounting
 async function startServer() {

@@ -102,7 +102,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               <li><button onClick={() => onNavigate('services')} className="hover:text-orange-600 transition-colors">About Us</button></li>
               <li><button onClick={() => onNavigate('services')} className="hover:text-orange-600 transition-colors">Blog</button></li>
               <li><button onClick={() => onNavigate('enquiry-form')} className="hover:text-orange-600 transition-colors">Contact Us</button></li>
-              <li><button onClick={() => onNavigate('services')} className="hover:text-orange-600 transition-colors">Privacy Policy</button></li>
+              <li><button onClick={() => onNavigate('admin-login')} className="text-slate-800 font-semibold hover:text-orange-600 transition-colors flex items-center gap-1">Admin Portal (Full Code Access)</button></li>
             </ul>
           </div>
 
