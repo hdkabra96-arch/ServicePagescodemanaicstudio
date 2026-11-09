@@ -46,18 +46,29 @@ export interface ServiceItem {
 
 export interface TemplateItem {
   id: string;
-  templateCode: string; // e.g. BIZ-001, AP-001, AND-001, ECOM-001
+  templateCode: string; // e.g. BIZ-001, AP-001, AND-001, ECOM-001, VERCEL-001
   name: string;
-  serviceCategory: string; // e.g. 'Business Website', 'Admin Panel', 'Android App'
+  serviceCategory: string; // e.g. 'Business Website', 'Admin Panel', 'Android App', 'E-commerce Website'
   industryTag: string; // e.g. 'Corporate', 'Healthcare', 'Restaurant'
   description: string;
-  previewType: 'website' | 'admin-panel' | 'mobile-app' | 'ecommerce' | 'corporate' | 'booking' | 'student';
+  previewType: 'website' | 'admin-panel' | 'mobile-app' | 'ecommerce' | 'corporate' | 'booking' | 'student' | 'external-iframe';
   imagePlaceholderGradient: string;
   thumbnail: string;
   features: string[];
   platform?: 'android' | 'ios';
   tags: string[];
   tier?: 'basic' | 'mid-range' | 'premium' | 'ultra-premium';
+  tierLabel?: string;
+  externalUrl?: string;
+  isExternal?: boolean;
+  platformHost?: string;
+  slug?: string;
+  createdAt?: string;
+}
+
+export interface CustomWebsiteItem extends TemplateItem {
+  externalUrl: string;
+  isExternal: true;
 }
 
 export interface BusinessTemplateItem extends TemplateItem {

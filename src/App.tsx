@@ -38,12 +38,24 @@ import { EnquiryFormView } from './components/EnquiryFormView';
 import { SuccessView } from './components/SuccessView';
 import { AdminLoginView } from './components/admin/AdminLoginView';
 import { AdminPanelView } from './components/admin/AdminPanelView';
+import { ExternalWebsiteLivePreview } from './components/demos/ExternalWebsiteLivePreview';
 import { AdminUser } from './types';
+
+let customSitesStore: TemplateItem[] = [];
 
 // Helper to look up any template by id, code, or slug
 function lookupTemplate(identifier: string): (TemplateItem | BusinessTemplateItem) | undefined {
   if (!identifier) return undefined;
   const clean = identifier.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const customMatch = customSitesStore.find(
+    (t) =>
+      t.id.toLowerCase().replace(/[^a-z0-9]/g, '') === clean ||
+      (t.slug && t.slug.toLowerCase().replace(/[^a-z0-9]/g, '') === clean) ||
+      t.templateCode.toLowerCase().replace(/[^a-z0-9]/g, '') === clean ||
+      t.name.toLowerCase().replace(/[^a-z0-9]/g, '') === clean
+  );
+  if (customMatch) return customMatch;
 
   const biz = BUSINESS_TEMPLATES.find(
     (t) =>
@@ -57,6 +69,7 @@ function lookupTemplate(identifier: string): (TemplateItem | BusinessTemplateIte
   return ALL_TEMPLATES.find(
     (t) =>
       t.id.toLowerCase().replace(/[^a-z0-9]/g, '') === clean ||
+      (t.slug && t.slug.toLowerCase().replace(/[^a-z0-9]/g, '') === clean) ||
       t.templateCode.toLowerCase().replace(/[^a-z0-9]/g, '') === clean ||
       t.name.toLowerCase().replace(/[^a-z0-9]/g, '') === clean
   );
@@ -349,8 +362,23 @@ export default function App() {
     }
   };
 
+  const fetchCustomSites = async () => {
+    try {
+      const res = await fetch('/api/custom-sites');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          customSitesStore = json.data;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   useEffect(() => {
     fetchEnquiries();
+    fetchCustomSites();
   }, []);
 
   // Navigation handlers with real browser URL sync
@@ -569,6 +597,26 @@ export default function App() {
             </div>
           </div>
         </div>
+      );
+    }
+
+    // External Live Production Websites (e.g. Vercel, Netlify)
+    if (activeTemplate.previewType === 'external-iframe' || (activeTemplate as any).externalUrl) {
+      return (
+        <ExternalWebsiteLivePreview
+          template={activeTemplate as TemplateItem}
+          onBack={() => {
+            const cat = activeTemplate.serviceCategory?.toLowerCase() || '';
+            if (cat.includes('ecommerce')) {
+              handleNavigate('ecommerce');
+            } else if (cat.includes('web-app') || cat.includes('application')) {
+              handleNavigate('web-application');
+            } else {
+              handleNavigate('services');
+            }
+          }}
+          onUseDesign={handleUseDesign}
+        />
       );
     }
 

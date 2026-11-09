@@ -728,6 +728,25 @@ export const ALL_TEMPLATES: TemplateItem[] = [
 
   // E-commerce Store Templates (Service page 9)
   {
+    id: 'site-vercel-001',
+    templateCode: 'VERCEL-ECOM-01',
+    name: 'Alpha E-Commerce Store (Vercel Live)',
+    serviceCategory: 'E-commerce Website',
+    industryTag: 'Fashion & Retail',
+    description: 'High-performing modern online store deployed live on Vercel with dynamic product catalogs, interactive cart, responsive layout, and seamless checkout flow.',
+    previewType: 'external-iframe',
+    externalUrl: 'https://ecommercewebsite1-alpha.vercel.app/',
+    imagePlaceholderGradient: 'from-purple-600 via-indigo-600 to-blue-600',
+    thumbnail: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80',
+    features: ['Live Vercel Production Deployment', 'Dynamic Product Catalog & Filtering', 'Interactive Shopping Cart Management', 'Mobile-First Responsive Interface', 'Instant Edge Delivery & Fast Checkout'],
+    tags: ['Vercel', 'E-commerce', 'Live Store', 'Fashion', 'Next.js'],
+    tier: 'premium',
+    tierLabel: 'Live Production',
+    isExternal: true,
+    platformHost: 'Vercel',
+    slug: 'alpha-ecommerce-vercel'
+  },
+  {
     id: 'tmpl-ecom-01',
     templateCode: 'ECOM-001',
     name: 'Fashion Store',

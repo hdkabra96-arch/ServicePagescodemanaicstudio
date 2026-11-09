@@ -8,11 +8,32 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-// In AI Studio / Cloud Run, NGINX reverse-proxy runs on 8080 and proxies traffic to 3000.
-// The Node dev server must always listen on port 3000.
-const PORT = process.env.PORT && process.env.PORT !== '8080' ? Number(process.env.PORT) : 3000;
+
+function resolvePort(): number {
+  const portArgIndex = process.argv.indexOf('--port');
+  if (portArgIndex !== -1 && process.argv[portArgIndex + 1]) {
+    const p = Number(process.argv[portArgIndex + 1]);
+    if (!isNaN(p) && p !== 8080) return p;
+  }
+  if (process.env.DEFAULT_APP_PORT) {
+    const p = Number(process.env.DEFAULT_APP_PORT);
+    if (!isNaN(p) && p !== 8080) return p;
+  }
+  if (process.env.PORT && process.env.PORT !== '8080') {
+    const p = Number(process.env.PORT);
+    if (!isNaN(p)) return p;
+  }
+  return 3000;
+}
+
+const PORT = resolvePort();
 
 app.use(express.json());
+
+// Health check endpoints for supervisor and monitoring
+app.get(['/health', '/__health'], (_req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
 
 // Persistent storage setup
 const DATA_DIR = path.join(__dirname, 'data');
@@ -313,10 +334,189 @@ app.delete('/api/enquiries/:id', (req, res) => {
   res.json({ success: true, message: 'Enquiry removed.' });
 });
 
+// Custom / External Websites Storage & Management
+const CUSTOM_SITES_FILE = path.join(DATA_DIR, 'custom-sites.json');
+
+const DEFAULT_CUSTOM_SITES = [
+  {
+    id: 'site-vercel-001',
+    templateCode: 'VERCEL-ECOM-01',
+    name: 'Alpha E-Commerce Store (Vercel Live)',
+    serviceCategory: 'E-commerce Website',
+    industryTag: 'Fashion & Retail',
+    description: 'High-performing modern online store deployed live on Vercel with dynamic product catalogs, interactive cart, responsive layout, and seamless checkout flow.',
+    previewType: 'external-iframe',
+    externalUrl: 'https://ecommercewebsite1-alpha.vercel.app/',
+    imagePlaceholderGradient: 'from-purple-600 via-indigo-600 to-blue-600',
+    thumbnail: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80',
+    features: [
+      'Live Vercel Production Deployment',
+      'Dynamic Product Catalog & Filtering',
+      'Interactive Shopping Cart Management',
+      'Mobile-First Responsive Interface',
+      'Instant Edge Delivery & Fast Checkout'
+    ],
+    tags: ['Vercel', 'E-commerce', 'Live Store', 'Fashion', 'Next.js'],
+    tier: 'premium',
+    tierLabel: 'Live Production',
+    isExternal: true,
+    platformHost: 'Vercel',
+    slug: 'alpha-ecommerce-vercel',
+    createdAt: new Date().toISOString()
+  }
+];
+
+function ensureCustomSitesStorage() {
+  ensureDataStorage();
+  if (!fs.existsSync(CUSTOM_SITES_FILE)) {
+    fs.writeFileSync(CUSTOM_SITES_FILE, JSON.stringify(DEFAULT_CUSTOM_SITES, null, 2), 'utf-8');
+  }
+}
+
+function readCustomSites() {
+  ensureCustomSitesStorage();
+  try {
+    const data = fs.readFileSync(CUSTOM_SITES_FILE, 'utf-8');
+    const parsed = JSON.parse(data);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+  } catch (err) {
+    console.error('Error reading custom sites:', err);
+  }
+  fs.writeFileSync(CUSTOM_SITES_FILE, JSON.stringify(DEFAULT_CUSTOM_SITES, null, 2), 'utf-8');
+  return DEFAULT_CUSTOM_SITES;
+}
+
+function saveCustomSites(sites: any[]) {
+  ensureCustomSitesStorage();
+  fs.writeFileSync(CUSTOM_SITES_FILE, JSON.stringify(sites, null, 2), 'utf-8');
+}
+
+// Custom Websites Endpoints
+app.get('/api/custom-sites', (_req, res) => {
+  const sites = readCustomSites();
+  res.json({ success: true, count: sites.length, data: sites });
+});
+
+app.post('/api/custom-sites', (req, res) => {
+  const {
+    name,
+    externalUrl,
+    serviceCategory,
+    industryTag,
+    description,
+    features,
+    tags,
+    thumbnail,
+    tier,
+    tierLabel,
+    platformHost
+  } = req.body;
+
+  if (!name || !externalUrl) {
+    return res.status(400).json({
+      success: false,
+      message: 'Website Name and Live URL are required.'
+    });
+  }
+
+  // Validate URL format
+  let formattedUrl = externalUrl.trim();
+  if (!/^https?:\/\//i.test(formattedUrl)) {
+    formattedUrl = `https://${formattedUrl}`;
+  }
+
+  const sites = readCustomSites();
+  const counter = sites.length + 1;
+  const detectedHost = platformHost || (formattedUrl.includes('vercel.app') ? 'Vercel' : formattedUrl.includes('netlify.app') ? 'Netlify' : 'Custom Host');
+
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
+  const newSite = {
+    id: `site-custom-${Date.now()}`,
+    templateCode: `EXT-${String(counter).padStart(3, '0')}`,
+    name: name.trim(),
+    serviceCategory: serviceCategory || 'E-commerce Website',
+    industryTag: industryTag || 'Custom',
+    description: description ? description.trim() : `Custom production website deployed at ${formattedUrl}`,
+    previewType: 'external-iframe',
+    externalUrl: formattedUrl,
+    imagePlaceholderGradient: 'from-blue-600 via-indigo-600 to-purple-600',
+    thumbnail: thumbnail || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80',
+    features: Array.isArray(features) && features.length > 0 ? features : ['Live Production Deployment', 'Responsive Design', 'Interactive User Interface', 'Fast Page Performance'],
+    tags: Array.isArray(tags) && tags.length > 0 ? tags : [detectedHost, 'Custom Website', 'Live Preview'],
+    tier: tier || 'premium',
+    tierLabel: tierLabel || `${detectedHost} Live`,
+    isExternal: true,
+    platformHost: detectedHost,
+    slug: slug || `site-${counter}`,
+    createdAt: new Date().toISOString()
+  };
+
+  sites.unshift(newSite);
+  saveCustomSites(sites);
+
+  console.log(`[API] Added new custom site: ${newSite.name} (${newSite.externalUrl})`);
+
+  res.status(201).json({
+    success: true,
+    message: 'Custom website successfully published to gallery and live preview.',
+    data: newSite
+  });
+});
+
+app.put('/api/custom-sites/:id', (req, res) => {
+  const sites = readCustomSites();
+  const index = sites.findIndex((s: any) => s.id.toLowerCase() === req.params.id.toLowerCase());
+  if (index === -1) {
+    return res.status(404).json({ success: false, message: 'Custom website not found.' });
+  }
+
+  const updated = {
+    ...sites[index],
+    ...req.body,
+    id: sites[index].id, // preserve id
+    isExternal: true,
+    previewType: 'external-iframe',
+    updatedAt: new Date().toISOString()
+  };
+
+  sites[index] = updated;
+  saveCustomSites(sites);
+
+  res.json({ success: true, message: 'Website details updated successfully.', data: updated });
+});
+
+app.delete('/api/custom-sites/:id', (req, res) => {
+  const sites = readCustomSites();
+  const filtered = sites.filter((s: any) => s.id.toLowerCase() !== req.params.id.toLowerCase());
+  saveCustomSites(filtered);
+  res.json({ success: true, message: 'Custom website removed from gallery.' });
+});
+
+
 
 // Vite Middleware mounting
 async function startServer() {
   ensureDataStorage();
+
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
+
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`Port ${PORT} in use, retrying connection in 1 second...`);
+      setTimeout(() => {
+        server.close();
+        server.listen(PORT, '0.0.0.0');
+      }, 1000);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
 
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'dist')));
@@ -324,19 +524,20 @@ async function startServer() {
       res.sendFile(path.join(__dirname, 'dist', 'index.html'));
     });
   } else {
-    const vite = await createViteServer({
-      server: {
-        middlewareMode: true,
-        allowedHosts: true
-      },
-      appType: 'spa'
-    });
-    app.use(vite.middlewares);
+    try {
+      const vite = await createViteServer({
+        server: {
+          middlewareMode: true,
+          allowedHosts: true
+        },
+        appType: 'spa'
+      });
+      app.use(vite.middlewares);
+      console.log('Vite SPA middleware ready.');
+    } catch (viteErr) {
+      console.error('Vite dev server init error:', viteErr);
+    }
   }
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-  });
 }
 
 startServer().catch((err) => {

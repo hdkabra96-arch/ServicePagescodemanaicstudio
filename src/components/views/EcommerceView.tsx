@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   ArrowRight,
   ShoppingCart,
@@ -8,7 +8,10 @@ import {
   Layers,
   Wrench,
   Smartphone,
-  ChevronRight
+  ChevronRight,
+  ExternalLink,
+  Globe,
+  Sparkles
 } from 'lucide-react';
 import { TemplateItem } from '../../types';
 import { ALL_TEMPLATES } from '../../data/servicesData';
@@ -30,13 +33,46 @@ export const EcommerceView: React.FC<EcommerceViewProps> = ({
   onStartProject
 }) => {
   const [activeTab, setActiveTab] = useState('All');
+  const [customSites, setCustomSites] = useState<TemplateItem[]>([]);
 
-  const filterTabs = ['All', 'Fashion', 'Electronics', 'Grocery', 'Furniture', 'Beauty', 'Multi-Vendor'];
+  useEffect(() => {
+    fetch('/api/custom-sites')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data)) {
+          setCustomSites(data.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
-  const ecomTemplates = ALL_TEMPLATES.filter((t) => t.previewType === 'ecommerce');
+  const filterTabs = ['All', 'Live Vercel', 'Fashion', 'Electronics', 'Grocery', 'Furniture', 'Multi-Vendor'];
+
+  // Combine static and custom external sites
+  const allAvailableTemplates = useMemo(() => {
+    const combined = [...customSites, ...ALL_TEMPLATES];
+    const seen = new Set<string>();
+    return combined.filter(t => {
+      if (seen.has(t.id)) return false;
+      seen.add(t.id);
+      return true;
+    });
+  }, [customSites]);
+
+  const ecomTemplates = useMemo(() => {
+    return allAvailableTemplates.filter((t) => {
+      const isEcomType = t.previewType === 'ecommerce' || t.previewType === 'external-iframe';
+      const isEcomCat = t.serviceCategory && t.serviceCategory.toLowerCase().includes('ecommerce');
+      const hasEcomTag = t.tags && t.tags.some(tag => tag.toLowerCase() === 'e-commerce' || tag.toLowerCase() === 'ecommerce');
+      return isEcomType || isEcomCat || hasEcomTag;
+    });
+  }, [allAvailableTemplates]);
 
   const filteredTemplates = ecomTemplates.filter((t) => {
     if (activeTab === 'All') return true;
+    if (activeTab === 'Live Vercel') {
+      return t.isExternal || t.previewType === 'external-iframe' || (t.tags && t.tags.some(tag => tag.toLowerCase() === 'vercel'));
+    }
     return (
       t.industryTag.toLowerCase() === activeTab.toLowerCase() ||
       t.tags.some((tag) => tag.toLowerCase() === activeTab.toLowerCase())
@@ -220,19 +256,91 @@ export const EcommerceView: React.FC<EcommerceViewProps> = ({
         </div>
       </section>
 
+      {/* Featured Live Vercel Deployment Spotlight */}
+      <section className="py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white border border-indigo-800/60 shadow-xl">
+          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div className="space-y-3 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Featured Live Production Website</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">Vercel</span>
+              </div>
+
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Alpha E-Commerce Storefront
+              </h3>
+
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Live production deployment built for fast shopping experiences: interactive cart, modern product catalog, lightning-fast edge performance, and responsive checkout.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 pt-1 font-mono text-xs text-emerald-400">
+                <span className="flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5" />
+                  https://ecommercewebsite1-alpha.vercel.app/
+                </span>
+                <span className="text-slate-500">•</span>
+                <span className="text-slate-400 font-sans">Full Device Preview Available</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto shrink-0">
+              <button
+                onClick={() => {
+                  const vercelTemplate = allAvailableTemplates.find(t => t.id === 'site-vercel-001') || {
+                    id: 'site-vercel-001',
+                    templateCode: 'VERCEL-ECOM-01',
+                    name: 'Alpha E-Commerce Store (Vercel Live)',
+                    serviceCategory: 'E-commerce Website',
+                    industryTag: 'Fashion & Retail',
+                    description: 'Modern, high-conversion online store deployed live on Vercel.',
+                    previewType: 'external-iframe',
+                    externalUrl: 'https://ecommercewebsite1-alpha.vercel.app/',
+                    imagePlaceholderGradient: 'from-purple-600 to-blue-600',
+                    thumbnail: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80',
+                    features: ['Live Vercel Production Deployment', 'Interactive Shopping Cart', 'Responsive UI'],
+                    tags: ['Vercel', 'E-commerce', 'Live Store'],
+                    tier: 'premium',
+                    isExternal: true
+                  };
+                  onLivePreview(vercelTemplate as TemplateItem);
+                }}
+                className="py-3 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+              >
+                <span>Live Interactive Preview</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <a
+                href="https://ecommercewebsite1-alpha.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-3 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <span>Visit Live Site</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Templates Section (matching Reference Image 9) */}
       <section id="ecom-templates" className="py-12 bg-white border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="mb-8">
             <span className="text-xs font-bold uppercase tracking-wider text-orange-600">
-              STORE TEMPLATES
+              STORE TEMPLATES & LIVE SITES
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
               E-commerce Website <span className="text-[#F95700]">Templates</span>
             </h2>
             <p className="text-slate-500 text-xs sm:text-sm mt-1">
-              Explore our ready-made e-commerce website designs. Choose a template that matches your business.
+              Explore our ready-made e-commerce website designs and live Vercel deployments. Choose a template or preview live stores.
             </p>
           </div>
 
@@ -266,15 +374,37 @@ export const EcommerceView: React.FC<EcommerceViewProps> = ({
                       alt={tmpl.name}
                       className="w-full h-full object-cover hover:scale-105 transition-transform"
                     />
-                    <div className="absolute top-2 right-2 bg-slate-900/80 text-white text-[10px] font-mono px-2 py-0.5 rounded">
-                      {tmpl.templateCode}
+                    <div className="absolute top-2 right-2 bg-slate-900/80 text-white text-[10px] font-mono px-2 py-0.5 rounded flex items-center gap-1">
+                      {tmpl.isExternal && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+                      <span>{tmpl.templateCode}</span>
                     </div>
+
+                    {tmpl.isExternal && (
+                      <div className="absolute bottom-2 left-2 bg-emerald-950/90 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-800 backdrop-blur-xs flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span>Live on {tmpl.platformHost || 'Vercel'}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-4 space-y-1.5">
-                    <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
-                      {tmpl.industryTag}
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
+                        {tmpl.industryTag}
+                      </span>
+                      {tmpl.isExternal && (
+                        <a
+                          href={tmpl.externalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-slate-400 hover:text-emerald-600 flex items-center gap-0.5"
+                          title="Open external URL directly"
+                        >
+                          <span>Open</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      )}
+                    </div>
                     <h3 className="font-extrabold text-slate-900 text-base">{tmpl.name}</h3>
                     <p className="text-xs text-slate-500 leading-snug line-clamp-2">{tmpl.description}</p>
                   </div>

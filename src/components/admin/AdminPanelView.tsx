@@ -3,7 +3,8 @@ import {
   Code, Download, Eye, Search, Filter, ShieldCheck, CheckCircle2,
   FileCode, Layers, Server, RefreshCw, Key, LogOut, ArrowLeft,
   ExternalLink, Package, Cpu, Sparkles, FolderArchive, Smartphone,
-  Globe, Database, BarChart3, AlertCircle, HardDriveDownload
+  Globe, Database, BarChart3, AlertCircle, HardDriveDownload, Plus,
+  Trash2, Edit3, ShoppingBag
 } from 'lucide-react';
 import {
   getAllDownloadableTemplates,
@@ -12,6 +13,7 @@ import {
   DownloadableTemplateItem
 } from '../../services/templateCodeExporter';
 import { CodeInspectorModal } from './CodeInspectorModal';
+import { AddWebsiteModal } from './AddWebsiteModal';
 import { AdminUser, Enquiry } from '../../types';
 
 interface AdminPanelViewProps {
@@ -27,8 +29,13 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   onNavigateHome,
   onPreviewTemplate
 }) => {
-  const [activeTab, setActiveTab] = useState<'repository' | 'export' | 'enquiries' | 'security'>('repository');
+  const [activeTab, setActiveTab] = useState<'repository' | 'custom-sites' | 'export' | 'enquiries' | 'security'>('repository');
   const [templates, setTemplates] = useState<DownloadableTemplateItem[]>([]);
+  const [customSites, setCustomSites] = useState<any[]>([]);
+  const [loadingCustomSites, setLoadingCustomSites] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingSite, setEditingSite] = useState<any | null>(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedTier, setSelectedTier] = useState<string>('all');
@@ -60,7 +67,67 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   useEffect(() => {
     setTemplates(getAllDownloadableTemplates());
     loadEnquiries();
+    loadCustomSites();
   }, []);
+
+  const loadCustomSites = async () => {
+    setLoadingCustomSites(true);
+    try {
+      const res = await fetch('/api/custom-sites');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          setCustomSites(data.data);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load custom sites:', err);
+    } finally {
+      setLoadingCustomSites(false);
+    }
+  };
+
+  const handleSaveCustomSite = async (siteData: any) => {
+    const isEdit = !!editingSite?.id;
+    const url = isEdit ? `/api/custom-sites/${editingSite.id}` : '/api/custom-sites';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(siteData)
+    });
+
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      throw new Error(result.message || 'Failed to save website');
+    }
+
+    await loadCustomSites();
+    setDownloadSuccessMessage(
+      isEdit
+        ? `Successfully updated ${siteData.name}`
+        : `Successfully published ${siteData.name} to website gallery and live preview!`
+    );
+    setTimeout(() => setDownloadSuccessMessage(null), 6000);
+  };
+
+  const handleDeleteCustomSite = async (siteId: string, siteName: string) => {
+    if (!window.confirm(`Are you sure you want to remove "${siteName}" from the website gallery?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/custom-sites/${siteId}`, { method: 'DELETE' });
+      if (res.ok) {
+        await loadCustomSites();
+        setDownloadSuccessMessage(`Removed ${siteName} from gallery.`);
+        setTimeout(() => setDownloadSuccessMessage(null), 5000);
+      }
+    } catch (err) {
+      console.error('Failed to delete custom site:', err);
+    }
+  };
 
   const loadEnquiries = async () => {
     setLoadingEnquiries(true);
@@ -218,6 +285,19 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
           </div>
 
           <div className="flex items-center space-x-3">
+            {/* Quick Add Custom Website Button */}
+            <button
+              onClick={() => {
+                setEditingSite(null);
+                setIsAddModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition-colors shadow-sm"
+              title="Add a new live Vercel or external website with interactive preview"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Custom Website</span>
+            </button>
+
             {/* Quick 1-Click Master Download */}
             <button
               onClick={() => handleDownloadBatch('all', 'all')}
@@ -260,6 +340,20 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
           >
             <FolderArchive className="w-3.5 h-3.5" />
             <span>Websites & Apps Repository ({templates.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('custom-sites')}
+            className={`py-3 px-4 text-xs font-semibold uppercase tracking-wider border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
+              activeTab === 'custom-sites'
+                ? 'border-emerald-500 text-emerald-400 bg-emerald-950/20'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>Vercel & External Sites ({customSites.length})</span>
+            {customSites.length > 0 && (
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            )}
           </button>
           <button
             onClick={() => setActiveTab('export')}
@@ -525,6 +619,282 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                 >
                   Clear all filters
                 </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB: VERCEL & EXTERNAL SITES MANAGER */}
+        {activeTab === 'custom-sites' && (
+          <div className="space-y-6">
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-emerald-950/60 via-slate-900/80 to-cyan-950/60 border border-emerald-800/60 rounded-2xl p-6 sm:p-8">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="max-w-2xl space-y-3">
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-emerald-950 border border-emerald-800/80 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Live External Deployments • Vercel & Production Stores</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-white tracking-tight">
+                    Vercel & Custom Websites Manager
+                  </h2>
+                  <p className="text-sm text-slate-300 leading-relaxed">
+                    Showcase external websites and web applications directly inside Codemanaic Studio. Every website registered here is dynamically rendered with an interactive multi-device preview (Desktop, Tablet, Mobile) and integrated with client quote requests.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setEditingSite(null);
+                    setIsAddModalOpen(true);
+                  }}
+                  className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all shadow-lg shadow-emerald-950/50 flex items-center gap-2 shrink-0 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Add Custom Website</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
+                <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                  <span>Custom Websites</span>
+                  <Globe className="w-4 h-4 text-emerald-400" />
+                </div>
+                <p className="text-2xl font-bold text-white">{customSites.length}</p>
+                <p className="text-[11px] text-slate-500 mt-1">Live in Website Catalog</p>
+              </div>
+
+              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
+                <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                  <span>Vercel Deployments</span>
+                  <Cpu className="w-4 h-4 text-cyan-400" />
+                </div>
+                <p className="text-2xl font-bold text-white">
+                  {customSites.filter(s => s.platformHost === 'Vercel' || s.externalUrl?.includes('vercel.app')).length}
+                </p>
+                <p className="text-[11px] text-slate-500 mt-1">Edge CDN Hosted</p>
+              </div>
+
+              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
+                <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                  <span>Preview Engine</span>
+                  <Eye className="w-4 h-4 text-purple-400" />
+                </div>
+                <p className="text-2xl font-bold text-emerald-400">Multi-Device</p>
+                <p className="text-[11px] text-slate-500 mt-1">Desktop • Tablet • Mobile</p>
+              </div>
+
+              <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4">
+                <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
+                  <span>Storage Backend</span>
+                  <Database className="w-4 h-4 text-blue-400" />
+                </div>
+                <p className="text-2xl font-bold text-white">Persistent</p>
+                <p className="text-[11px] text-slate-500 mt-1">Realtime REST API</p>
+              </div>
+            </div>
+
+            {/* Custom Sites Grid */}
+            {loadingCustomSites ? (
+              <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-xl">
+                <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto mb-3" />
+                <p className="text-sm font-medium text-slate-300">Loading custom websites...</p>
+              </div>
+            ) : customSites.length === 0 ? (
+              <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-xl space-y-4">
+                <Globe className="w-12 h-12 text-slate-600 mx-auto" />
+                <div className="space-y-1">
+                  <h3 className="text-base font-semibold text-slate-200">No custom websites added yet</h3>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    Add your deployed Vercel stores, portfolio websites, or client projects to feature them with interactive live previews.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingSite(null);
+                    setIsAddModalOpen(true);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition-colors inline-flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add First Website</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {customSites.map((site) => (
+                  <div
+                    key={site.id}
+                    className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl hover:border-slate-700 transition-all flex flex-col justify-between group"
+                  >
+                    <div>
+                      {/* Thumbnail Header with Live Badge */}
+                      <div className="relative h-48 bg-slate-950 overflow-hidden">
+                        <img
+                          src={site.thumbnail}
+                          alt={site.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+
+                        {/* Top Pills */}
+                        <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-950/90 text-emerald-300 border border-emerald-700/80 backdrop-blur-sm shadow-md">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>Live on {site.platformHost || 'Vercel'}</span>
+                          </span>
+
+                          <span className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-900/90 text-slate-300 border border-slate-700 backdrop-blur-sm">
+                            {site.category}
+                          </span>
+                        </div>
+
+                        {/* Quick Hover Action Overlay */}
+                        <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                          <button
+                            onClick={() => onPreviewTemplate?.(site.id)}
+                            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center gap-1.5 transition-colors shadow-lg"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Test Live Preview</span>
+                          </button>
+                          <a
+                            href={site.externalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs flex items-center gap-1.5 transition-colors border border-slate-700"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Visit URL</span>
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* Content Body */}
+                      <div className="p-5 space-y-4">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-base text-white tracking-tight">
+                              {site.name}
+                            </h3>
+                            <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                              {site.tier || 'Mid-Range'}
+                            </span>
+                          </div>
+                          {site.industry && (
+                            <p className="text-xs font-medium text-emerald-400">
+                              {site.industry}
+                            </p>
+                          )}
+                          <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
+                            {site.description}
+                          </p>
+                        </div>
+
+                        {/* Live URL Link */}
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950/80 rounded-lg border border-slate-800/80 text-xs">
+                          <Globe className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          <a
+                            href={site.externalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-cyan-400 hover:underline truncate font-mono text-[11px]"
+                          >
+                            {site.externalUrl}
+                          </a>
+                          <ExternalLink className="w-3 h-3 text-slate-500 shrink-0 ml-auto" />
+                        </div>
+
+                        {/* Feature Badges */}
+                        {Array.isArray(site.features) && site.features.length > 0 && (
+                          <div className="space-y-1.5">
+                            <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
+                              Included Highlights
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {site.features.slice(0, 4).map((feat: string, idx: number) => (
+                                <span
+                                  key={idx}
+                                  className="text-[11px] px-2 py-0.5 rounded bg-slate-800/70 text-slate-300 border border-slate-700/60"
+                                >
+                                  {feat}
+                                </span>
+                              ))}
+                              {site.features.length > 4 && (
+                                <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800/70 text-slate-400 border border-slate-700/60">
+                                  +{site.features.length - 4} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Tech Stack Chips */}
+                        {Array.isArray(site.techStack) && site.techStack.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {site.techStack.map((tech: string, idx: number) => (
+                              <span
+                                key={idx}
+                                className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/60"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Card Footer Actions */}
+                    <div className="px-5 py-3.5 bg-slate-950/60 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => onPreviewTemplate?.(site.id)}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition-colors flex items-center gap-1.5 shadow-xs"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Live Preview</span>
+                        </button>
+                        <a
+                          href={site.externalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs transition-colors flex items-center gap-1 border border-slate-700"
+                        >
+                          <span>Visit</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            setEditingSite(site);
+                            setIsAddModalOpen(true);
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition-colors"
+                          title="Edit Website Details"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCustomSite(site.id, site.name)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
+                          title="Remove from Gallery"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -811,6 +1181,17 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
           onDownload={() => handleDownloadSingle(inspectingTemplate)}
         />
       )}
+
+      {/* Add / Edit Custom Website Modal */}
+      <AddWebsiteModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setEditingSite(null);
+        }}
+        onSave={handleSaveCustomSite}
+        editingSite={editingSite}
+      />
     </div>
   );
 };
