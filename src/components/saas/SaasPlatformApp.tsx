@@ -8,6 +8,7 @@ import {
   CheckCheck,
   CheckSquare,
   ChevronDown,
+  CreditCard,
   FolderKanban,
   History,
   Layers,
@@ -31,8 +32,9 @@ import { SaasProjectsView } from './SaasProjectsView';
 import { SaasTasksView } from './SaasTasksView';
 import { SaasAnalyticsView } from './SaasAnalyticsView';
 import { SaasAuditLogsView } from './SaasAuditLogsView';
+import { SaasBillingView } from './SaasBillingView';
 
-type SaasNavTab = 'dashboard' | 'clients' | 'projects' | 'tasks' | 'analytics' | 'audit' | 'team' | 'profile';
+type SaasNavTab = 'dashboard' | 'clients' | 'projects' | 'tasks' | 'billing' | 'analytics' | 'audit' | 'team' | 'profile';
 
 interface SaasPlatformAppProps {
   onBackToStudio: () => void;
@@ -103,6 +105,7 @@ const SaasShellInner: React.FC<SaasPlatformAppProps> = ({ onBackToStudio }) => {
     { id: 'clients', label: 'Clients CRM', icon: Briefcase },
     { id: 'projects', label: 'Projects', icon: FolderKanban },
     { id: 'tasks', label: 'Tasks & Sprints', icon: CheckSquare },
+    { id: 'billing', label: 'Billing & Plans', icon: CreditCard },
     { id: 'analytics', label: 'Analytics & Reports', icon: BarChart3 },
     { id: 'audit', label: 'Audit Logs', icon: History },
     { id: 'team', label: 'Workspaces & Team', icon: Users },
@@ -114,6 +117,7 @@ const SaasShellInner: React.FC<SaasPlatformAppProps> = ({ onBackToStudio }) => {
     clients: 'Clients CRM',
     projects: 'Projects Portfolio',
     tasks: 'Tasks & Deliverables',
+    billing: 'Billing & Plans',
     analytics: 'Analytics & Reports',
     audit: 'Audit Logs Ledger',
     team: 'Workspaces & Team',
@@ -396,6 +400,15 @@ const SaasShellInner: React.FC<SaasPlatformAppProps> = ({ onBackToStudio }) => {
             <SaasTasksView
               org={activeOrg}
               user={user}
+              onDataMutated={() => {
+                refreshSession();
+                fetchNotifications();
+              }}
+            />
+          )}
+          {activeTab === 'billing' && (
+            <SaasBillingView
+              org={activeOrg}
               onDataMutated={() => {
                 refreshSession();
                 fetchNotifications();

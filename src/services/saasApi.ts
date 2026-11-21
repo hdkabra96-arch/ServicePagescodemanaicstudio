@@ -3,13 +3,15 @@ import type {
   PlanDefinition,
   SaasAuditLog,
   SaasClient,
+  SaasInvoice,
   SaasMember,
   SaasNotification,
   SaasOrganization,
   SaasProject,
   SaasRole,
   SaasTask,
-  SaasUser
+  SaasUser,
+  SubscriptionPlanId
 } from '../types/saas';
 
 export class SaasApiError extends Error {
@@ -136,6 +138,21 @@ export interface AnalyticsPayload {
     openTasks: number;
     estimatedHours: number;
   }>;
+}
+
+export interface SubscriptionPayload {
+  planId: SubscriptionPlanId;
+  activePlan: PlanDefinition;
+  subscriptionStatus: string;
+  billingEmail: string;
+  currentPeriodEnd: string;
+  paymentGatewayConfigured: boolean;
+  usage: {
+    members: { used: number; limit: number };
+    clients: { used: number; limit: number };
+    projects: { used: number; limit: number };
+  };
+  plans: PlanDefinition[];
 }
 
 export const saasApi = {
@@ -357,6 +374,53 @@ export const saasApi = {
       organizations: SaasOrganization[];
     }>(`/organizations/${orgId}`, {
       method: 'PATCH',
+      body: JSON.stringify(body)
+    }),
+
+  // Invoices & Billing
+  getInvoices: (
+    orgId: string,
+    params?: { search?: string; status?: string; sortBy?: string; sortDir?: string; page?: number; limit?: number }
+  ) =>
+    request<
+      PaginatedResponse<SaasInvoice> & {
+        summary: { paidTotal: number; sentTotal: number; overdueTotal: number; draftTotal: number };
+      }
+    >(`/organizations/${orgId}/invoices${buildQuery(params)}`),
+
+  createInvoice: (orgId: string, body: Partial<SaasInvoice>) =>
+    request<{ success: boolean; message: string; data: SaasInvoice }>(`/organizations/${orgId}/invoices`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+
+  updateInvoice: (orgId: string, invoiceId: string, body: Partial<SaasInvoice>) =>
+    request<{ success: boolean; message: string; data: SaasInvoice }>(
+      `/organizations/${orgId}/invoices/${invoiceId}`,
+      { method: 'PATCH', body: JSON.stringify(body) }
+    ),
+
+  deleteInvoice: (orgId: string, invoiceId: string) =>
+    request<{ success: boolean; message: string }>(`/organizations/${orgId}/invoices/${invoiceId}`, {
+      method: 'DELETE'
+    }),
+
+  // Subscriptions
+  getSubscription: (orgId: string) =>
+    request<{ success: boolean; data: SubscriptionPayload }>(`/organizations/${orgId}/subscription`),
+
+  changeSubscriptionPlan: (
+    orgId: string,
+    body: { planId: SubscriptionPlanId; billingCycle: 'monthly' | 'annual'; paymentMethod?: string }
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+      invoiceNumber: string;
+      data: SaasOrganization;
+      organizations: SaasOrganization[];
+    }>(`/organizations/${orgId}/subscription/change-plan`, {
+      method: 'POST',
       body: JSON.stringify(body)
     })
 };

@@ -8,6 +8,7 @@ import { createSaasAuthRouter } from './server/saas/authRoutes.ts';
 import { createSaasDashboardRouter } from './server/saas/dashboardRoutes.ts';
 import { createSaasModulesRouter } from './server/saas/modulesRoutes.ts';
 import { createSaasAdvancedRouter } from './server/saas/advancedRoutes.ts';
+import { createSaasBillingRouter } from './server/saas/billingRoutes.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -588,6 +589,7 @@ app.use('/api/saas', createSaasAuthRouter());
 app.use('/api/saas', createSaasDashboardRouter());
 app.use('/api/saas', createSaasModulesRouter());
 app.use('/api/saas', createSaasAdvancedRouter());
+app.use('/api/saas', createSaasBillingRouter());
 
 // Vite Middleware mounting
 async function startServer() {
