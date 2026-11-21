@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Globe, Code, Smartphone, ShoppingCart, Settings } from 'lucide-react';
+import { ArrowRight, Globe, Code, Smartphone, ShoppingCart, Settings, Layers } from 'lucide-react';
 import { PageView } from '../types';
 
 interface CoreServicesSectionProps {
@@ -57,6 +57,16 @@ export const CoreServicesSection: React.FC<CoreServicesSectionProps> = ({ onSele
       bgColor: 'bg-pink-50',
       borderColor: 'border-pink-100',
       hoverBorder: 'hover:border-pink-300'
+    },
+    {
+      id: 'saas-platform',
+      title: 'SaaS Platform',
+      view: 'saas-platform' as PageView,
+      icon: Layers,
+      color: 'text-[#1769AA]',
+      bgColor: 'bg-[#EBF6FF]',
+      borderColor: 'border-[#CBE6FA]',
+      hoverBorder: 'hover:border-[#5BB6F5]'
     }
   ];
 
@@ -79,8 +89,8 @@ export const CoreServicesSection: React.FC<CoreServicesSectionProps> = ({ onSele
           </p>
         </div>
 
-        {/* 5 Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        {/* 6 Cards Symmetrical Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((item) => {
             const Icon = item.icon;
             return (

@@ -35,6 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
     { label: 'Websites', view: 'website-development' as PageView, active: currentView === 'website-development' },
     { label: 'E-commerce', view: 'ecommerce' as PageView, active: currentView === 'ecommerce' },
     { label: 'Custom Systems', view: 'custom-websites' as PageView, active: currentView === 'custom-websites' },
+    { label: 'SaaS Platform', view: 'saas-platform' as PageView, active: currentView === 'saas-platform' },
     { label: 'Start Project', view: 'enquiry-form' as PageView, active: currentView === 'enquiry-form' }
   ];
 

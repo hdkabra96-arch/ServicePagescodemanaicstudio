@@ -122,23 +122,51 @@ export const WebsiteDevelopmentView: React.FC<WebsiteDevelopmentViewProps> = ({
               </div>
             </div>
 
-            {/* Right: Mockup Illustration */}
-            <div className="lg:col-span-6 flex justify-center">
-              <div className="relative max-w-[500px] w-full">
-                <div className="rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-800 bg-slate-900">
+            {/* Right: Multi-Aesthetic Bespoke Showcase Collage */}
+            <div className="lg:col-span-6">
+              <div className="grid grid-cols-12 gap-3">
+                <div className="col-span-12 relative rounded-xl overflow-hidden border border-slate-200 shadow-lg bg-[#1C1714]">
                   <img
-                    src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80"
-                    alt="Website Development Workspace"
-                    className="w-full aspect-16/10 object-cover"
+                    src="/src/assets/images/hero_luxury_estate_1795231129293.jpg"
+                    alt="Vallon Estates bespoke architectural real estate website"
+                    referrerPolicy="no-referrer"
+                    className="w-full aspect-16/9 object-cover"
                   />
-                  <div className="p-4 bg-slate-950 text-white flex items-center justify-between border-t border-slate-800">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+                  <div className="absolute bottom-3.5 left-4 right-4 flex items-end justify-between text-white">
                     <div>
-                      <div className="text-xs font-bold text-white">Modern Corporate & Business Templates</div>
-                      <div className="text-[11px] text-orange-400">Tested on mobile, tablet & desktop</div>
+                      <p className="text-[11px] font-mono uppercase tracking-wider text-slate-300">Vallon Estates · Luxury Realty</p>
+                      <p className="text-sm font-semibold">Architectural Concrete &amp; Interactive Mortgage Desk</p>
                     </div>
-                    <span className="text-xs font-mono font-bold bg-orange-600 px-2.5 py-1 rounded">
-                      Live Previews
-                    </span>
+                    <span className="text-xs font-mono text-white/90 shrink-0">Live</span>
+                  </div>
+                </div>
+
+                <div className="col-span-6 relative rounded-xl overflow-hidden border border-slate-200 shadow-md bg-[#1C1714]">
+                  <img
+                    src="/src/assets/images/hero_fine_dining_1795231129012.jpg"
+                    alt="Osteria Brasa candlelit hospitality website"
+                    referrerPolicy="no-referrer"
+                    className="w-full aspect-4/3 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute bottom-2.5 left-3 right-3 text-white">
+                    <p className="text-xs font-semibold leading-tight">Osteria Brasa</p>
+                    <p className="text-[10px] text-amber-200/90">Fine Dining · Table Booking</p>
+                  </div>
+                </div>
+
+                <div className="col-span-6 relative rounded-xl overflow-hidden border border-slate-200 shadow-md bg-[#1B4332]">
+                  <img
+                    src="/src/assets/images/hero_medical_clinic_1795231128255.jpg"
+                    alt="Arcadia Health Nordic private clinic website"
+                    referrerPolicy="no-referrer"
+                    className="w-full aspect-4/3 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute bottom-2.5 left-3 right-3 text-white">
+                    <p className="text-xs font-semibold leading-tight">Arcadia Health</p>
+                    <p className="text-[10px] text-emerald-200/90">Nordic Clinic · Slot Picker</p>
                   </div>
                 </div>
               </div>
@@ -189,93 +217,115 @@ export const WebsiteDevelopmentView: React.FC<WebsiteDevelopmentViewProps> = ({
         </div>
       </section>
 
-      {/* Website Solutions for Every Need (8 Cards from Reference Image 2 & 4) */}
+      {/* Website Solutions for Every Need */}
       <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-3">
           <div>
-            <h2 className="text-3xl font-extrabold text-slate-900">
-              Website Solutions <span className="text-[#F95700]">for Every Need</span>
+            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight" style={{ textWrap: 'balance' }}>
+              Website Solutions <span className="text-[#F95700]">for Every Industry</span>
             </h2>
             <p className="text-slate-500 text-sm mt-1">
-              Select any website type below to inspect templates and interactive designs.
+              Each category is engineered with its own visual system, typography, and conversion workflow.
             </p>
           </div>
-          <span className="text-xs text-slate-400 font-medium italic">
-            Choose the right type of website for your business.
+          <span className="text-xs text-slate-500 font-medium">
+            8 specialized website architectures
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-          {WEBSITE_SOLUTIONS.map((sol) => (
-            <div
-              key={sol.id}
-              onClick={() => onSelectCategory(sol.id)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') onSelectCategory(sol.id);
-              }}
-              className="p-5 rounded-2xl border-2 border-slate-200/90 hover:border-orange-500 bg-white hover:bg-orange-50/20 shadow-xs hover:shadow-xl cursor-pointer transition-all duration-300 flex flex-col justify-between group transform hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-xs">
-                  <Globe className="w-5 h-5" />
-                </div>
-                <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-all shadow-xs">
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {WEBSITE_SOLUTIONS.map((sol) => {
+            const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+              Globe,
+              BarChart3,
+              User,
+              FileText,
+              ShoppingCart,
+              GraduationCap,
+              BookOpen,
+              Settings
+            };
+            const paletteMap: Record<string, { bg: string; text: string; hoverBorder: string }> = {
+              orange: { bg: 'bg-orange-50', text: 'text-orange-700', hoverBorder: 'hover:border-orange-500' },
+              blue: { bg: 'bg-sky-50', text: 'text-sky-800', hoverBorder: 'hover:border-sky-600' },
+              pink: { bg: 'bg-rose-50', text: 'text-rose-700', hoverBorder: 'hover:border-rose-500' },
+              teal: { bg: 'bg-teal-50', text: 'text-teal-800', hoverBorder: 'hover:border-teal-600' },
+              purple: { bg: 'bg-indigo-50', text: 'text-indigo-700', hoverBorder: 'hover:border-indigo-600' },
+              amber: { bg: 'bg-amber-50', text: 'text-amber-800', hoverBorder: 'hover:border-amber-600' },
+              sky: { bg: 'bg-slate-100', text: 'text-slate-800', hoverBorder: 'hover:border-slate-700' },
+              rose: { bg: 'bg-emerald-50', text: 'text-emerald-800', hoverBorder: 'hover:border-emerald-600' }
+            };
+            const IconComp = iconMap[sol.icon] || Globe;
+            const pal = paletteMap[sol.color] || paletteMap.orange;
 
-              <div>
-                <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                  <h3 className="font-extrabold text-slate-900 text-sm leading-snug group-hover:text-orange-600 transition-colors">
+            return (
+              <div
+                key={sol.id}
+                onClick={() => onSelectCategory(sol.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') onSelectCategory(sol.id);
+                }}
+                className={`p-6 rounded-xl border border-slate-200 ${pal.hoverBorder} bg-white hover:shadow-md cursor-pointer transition-all duration-200 flex flex-col justify-between group`}
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <div className={`w-11 h-11 rounded-lg ${pal.bg} ${pal.text} flex items-center justify-center`}>
+                    <IconComp className="w-5 h-5" />
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-0.5 transition-all" />
+                </div>
+
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base leading-snug">
                     {sol.name}
                   </h3>
                   {(sol as any).badge && (
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+                    <p className="text-xs font-semibold text-orange-600 mt-1">
                       {(sol as any).badge}
-                    </span>
+                    </p>
                   )}
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                  {sol.desc}
-                </p>
-                <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-orange-600 group-hover:translate-x-1 transition-transform">
-                  <span>Explore Templates</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                    {sol.desc}
+                  </p>
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-xs font-semibold text-slate-800 group-hover:text-orange-600 transition-colors">
+                    <span>Explore Designs</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
-      {/* Templates Section (matching Reference Image 3 Step 2) */}
-      <section id="templates-section" className="py-12 bg-white border-y border-slate-100">
+      {/* Flagship Custom Website Showcase */}
+      <section id="templates-section" className="py-16 bg-white border-y border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          <div className="text-left mb-8">
-            <span className="text-xs font-bold uppercase tracking-wider text-orange-600">
-              BUSINESS WEBSITE TEMPLATES
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">
-              Choose Your Business <span className="text-[#F95700]">Website Design</span>
-            </h2>
-            <p className="text-slate-500 text-xs sm:text-sm mt-1 max-w-2xl">
-              Explore our professionally designed business website templates. Select a design you like and we will customize it for your business.
-            </p>
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-orange-600">
+                Bespoke Live Websites
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1" style={{ textWrap: 'balance' }}>
+                Distinctive Designs Built for <span className="text-[#F95700]">Real Businesses</span>
+              </h2>
+              <p className="text-slate-600 text-sm mt-2 max-w-2xl leading-relaxed">
+                Every website below is a complete, original experience with its own color system, typography, layout architecture, and live interactive booking or calculator workflow — never a recycled theme.
+              </p>
+            </div>
           </div>
 
-          {/* Filter Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 text-xs font-semibold no-scrollbar">
+          {/* Interactive Filter Controls */}
+          <div className="inline-flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-100 rounded-xl mb-10">
             {filterTabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveFilterTab(tab)}
-                className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${
+                className={`px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                   activeFilterTab === tab
-                    ? 'bg-orange-600 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {tab}
@@ -283,67 +333,113 @@ export const WebsiteDevelopmentView: React.FC<WebsiteDevelopmentViewProps> = ({
             ))}
           </div>
 
-          {/* Templates Grid (6 Cards from Reference Image 3 Step 2) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {filteredTemplates.map((tmpl) => (
-              <div
-                key={tmpl.id}
-                className="group bg-white rounded-2xl border border-slate-200/90 hover:border-orange-300 shadow-xs hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between"
-              >
-                <div>
-                  {/* Thumbnail */}
-                  <div className="relative aspect-16/10 overflow-hidden bg-slate-100">
-                    <img
-                      src={tmpl.thumbnail}
-                      alt={tmpl.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-mono px-2 py-0.5 rounded">
-                      {tmpl.templateCode}
+          {/* Bespoke Project Showcase Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredTemplates.map((tmpl) => {
+              const designProfiles: Record<string, { style: string; capability: string; swatches: string[]; surface: string }> = {
+                'BIZ-001': { style: 'Swiss Technical Grid', capability: 'Live ROI Calculator & Licensing', swatches: ['#FFFFFF', '#090D16', '#1D4ED8'], surface: 'bg-[#F8FAFC]' },
+                'BIZ-002': { style: 'Milan Monochrome Editorial', capability: 'Case Study Lightbox & Brief', swatches: ['#F5F4F0', '#0A0A0A', '#E12D1E'], surface: 'bg-[#F5F4F0]' },
+                'BIZ-003': { style: 'Heritage Navy & Limestone', capability: 'Practice Matrix & Global Desk', swatches: ['#F6F4EF', '#0C1B2A', '#9A7B4F'], surface: 'bg-[#F6F4EF]' },
+                'BIZ-004': { style: 'Candlelit Parchment Serif', capability: 'Dietary Menu & Table Booking', swatches: ['#F7F3EC', '#1C1714', '#B44B27'], surface: 'bg-[#F7F3EC]' },
+                'BIZ-005': { style: 'Architectural Concrete', capability: 'Property Filter & Mortgage Calc', swatches: ['#F4F5F6', '#0D131A', '#1F4E46'], surface: 'bg-[#F4F5F6]' },
+                'BIZ-006': { style: 'Nordic Botanical Ivory', capability: 'Same-Day Doctor Slot Booking', swatches: ['#FBFBF8', '#1B4332', '#EEF4F0'], surface: 'bg-[#F3F7F4]' },
+                'PORT-001': { style: 'Limestone Monograph', capability: 'Grid & Archival Spec Ledger', swatches: ['#ECEAE4', '#141413', '#8C6239'], surface: 'bg-[#ECEAE4]' },
+                'PORT-002': { style: 'Editorial Creative Reel', capability: 'Discipline Filter & Lightbox', swatches: ['#F5F4F0', '#0A0A0A', '#E12D1E'], surface: 'bg-[#F5F4F0]' },
+                'PORT-003': { style: 'Spatial Gallery Edition', capability: 'Material Swatches & Dossiers', swatches: ['#ECEAE4', '#141413', '#8C6239'], surface: 'bg-[#ECEAE4]' },
+                'BLOG-001': { style: 'Newsprint Broadsheet', capability: 'Article Reader & Sections', swatches: ['#FAF8F3', '#141414', '#9E1B1B'], surface: 'bg-[#FAF8F3]' },
+                'EDU-002': { style: 'Collegiate Forest & Gold', capability: 'Program Finder & Campus Visit', swatches: ['#F8F7F2', '#0F3D2E', '#B5892F'], surface: 'bg-[#F8F7F2]' }
+              };
+
+              const profile =
+                designProfiles[tmpl.templateCode] ||
+                (tmpl.templateCode.startsWith('BLOG')
+                  ? designProfiles['BLOG-001']
+                  : tmpl.templateCode.startsWith('EDU')
+                  ? designProfiles['EDU-002']
+                  : tmpl.templateCode.startsWith('PORT')
+                  ? designProfiles['PORT-001']
+                  : designProfiles['BIZ-001']);
+
+              return (
+                <article
+                  key={tmpl.id}
+                  className="group bg-white rounded-xl border border-slate-200 hover:border-slate-400 transition-all duration-200 overflow-hidden flex flex-col justify-between hover:shadow-lg"
+                >
+                  <div>
+                    {/* Bespoke Full-Bleed Preview Frame */}
+                    <div
+                      onClick={() => onLivePreview(tmpl)}
+                      className="relative aspect-16/10 overflow-hidden bg-slate-900 cursor-pointer"
+                    >
+                      <img
+                        src={tmpl.thumbnail}
+                        alt={tmpl.name}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+
+                      {/* Bottom overlay showing genuine theme palette & style */}
+                      <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between gap-2 text-white">
+                        <span className="text-xs font-medium tracking-tight truncate">
+                          {profile.style}
+                        </span>
+                        <div className="flex items-center gap-1 shrink-0" title="Website Color System">
+                          {profile.swatches.map((hex) => (
+                            <span
+                              key={hex}
+                              className="w-3.5 h-3.5 rounded-full border border-white/60 shadow-xs"
+                              style={{ backgroundColor: hex }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Clean Unboxed Metadata + Copy */}
+                    <div className={`p-6 space-y-2.5 ${profile.surface} border-b border-slate-200/70`}>
+                      <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                        <span className="text-slate-900 font-semibold">{tmpl.industryTag}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{tmpl.serviceCategory}</span>
+                      </div>
+
+                      <h3 className="font-extrabold text-slate-900 text-lg tracking-tight leading-snug">
+                        {tmpl.name}
+                      </h3>
+
+                      <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                        {tmpl.description}
+                      </p>
+
+                      <p className="text-xs font-semibold text-slate-800 pt-1">
+                        Interactive: <span className="font-normal text-slate-600">{profile.capability}</span>
+                      </p>
                     </div>
                   </div>
 
-                  <div className="p-5 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
-                        {tmpl.industryTag}
-                      </span>
-                      <span className="text-[10px] font-semibold text-slate-400">
-                        {tmpl.serviceCategory}
-                      </span>
-                    </div>
+                  {/* Clean Action Row */}
+                  <div className="p-4 bg-white grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => onLivePreview(tmpl)}
+                      className="py-2.5 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap"
+                    >
+                      <span>Open Live Site</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
 
-                    <h3 className="font-extrabold text-slate-900 text-lg group-hover:text-orange-600 transition-colors">
-                      {tmpl.name}
-                    </h3>
-                    <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
-                      {tmpl.description}
-                    </p>
+                    <button
+                      onClick={() => onUseDesign(tmpl)}
+                      className="py-2.5 px-3 rounded-lg border border-slate-300 hover:border-orange-600 hover:text-orange-600 text-slate-800 font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap"
+                    >
+                      <span>Book This Style</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                </div>
-
-                {/* Dual Action Buttons (matching Reference Image 3 Step 2) */}
-                <div className="p-5 pt-0 grid grid-cols-2 gap-3 border-t border-slate-50 mt-2">
-                  <button
-                    onClick={() => onLivePreview(tmpl)}
-                    className="py-2.5 px-3 rounded-xl border border-slate-300 hover:border-orange-500 text-slate-700 hover:text-orange-600 font-bold text-xs transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <span>Live Preview</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    onClick={() => onUseDesign(tmpl)}
-                    className="py-2.5 px-3 rounded-xl bg-[#F95700] hover:bg-[#EA4D00] text-white font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <span>Use This Design</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
+                </article>
+              );
+            })}
           </div>
-
         </div>
       </section>
 

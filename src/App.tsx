@@ -24,7 +24,7 @@ import { AppDevelopmentView } from './components/views/AppDevelopmentView';
 import { PlatformTemplatesView } from './components/views/PlatformTemplatesView';
 import { EcommerceView } from './components/views/EcommerceView';
 import { CustomWebsitesView } from './components/views/CustomWebsitesView';
-import { BusinessProDemo } from './components/demos/BusinessProDemo';
+import { SignatureWebsiteShowcase } from './components/demos/SignatureWebsiteShowcase';
 import { AdminPanelDemo } from './components/demos/AdminPanelDemo';
 import { MobileAppDemo } from './components/demos/MobileAppDemo';
 import { EcommerceStoreDemo } from './components/demos/EcommerceStoreDemo';
@@ -40,6 +40,7 @@ import { SuccessView } from './components/SuccessView';
 import { AdminLoginView } from './components/admin/AdminLoginView';
 import { AdminPanelView } from './components/admin/AdminPanelView';
 import { ExternalWebsiteLivePreview } from './components/demos/ExternalWebsiteLivePreview';
+import { SaasPlatformApp } from './components/saas/SaasPlatformApp';
 import { AdminUser } from './types';
 
 let customSitesStore: TemplateItem[] = [];
@@ -169,6 +170,8 @@ export default function App() {
           return '/admin/login';
         case 'admin-panel':
           return '/admin';
+        case 'saas-platform':
+          return '/saas';
         case 'live-preview': {
           const tmpl = template || activeTemplate;
           const slug = (tmpl as any)?.slug || tmpl?.id || 'preview';
@@ -221,6 +224,12 @@ export default function App() {
         }
         setCurrentView('admin-panel');
       }
+      return;
+    }
+
+    // 0b. Commercial SaaS Platform route: /saas
+    if (first === 'saas' || first === 'saas-platform') {
+      setCurrentView('saas-platform');
       return;
     }
 
@@ -706,7 +715,7 @@ export default function App() {
       case 'website':
       default:
         return (
-          <BusinessProDemo
+          <SignatureWebsiteShowcase
             template={activeTemplate as TemplateItem}
             onBack={() => handleNavigate('website-development')}
             onUseDesign={handleUseDesign}
@@ -715,7 +724,11 @@ export default function App() {
     }
   };
 
-  const isImmersiveView = currentView === 'live-preview' || currentView === 'admin-panel' || currentView === 'admin-login';
+  const isImmersiveView =
+    currentView === 'live-preview' ||
+    currentView === 'admin-panel' ||
+    currentView === 'admin-login' ||
+    currentView === 'saas-platform';
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-slate-800 flex flex-col selection:bg-orange-500 selection:text-white">
@@ -959,6 +972,11 @@ export default function App() {
               onBackToSite={() => handleNavigate('services')}
             />
           )
+        )}
+
+        {/* Commercial Multi-Tenant SaaS Platform */}
+        {currentView === 'saas-platform' && (
+          <SaasPlatformApp onBackToStudio={() => handleNavigate('services')} />
         )}
       </main>
 

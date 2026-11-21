@@ -17,7 +17,8 @@ export type PageView =
   | 'enquiry-form'
   | 'success'
   | 'admin-login'
-  | 'admin-panel';
+  | 'admin-panel'
+  | 'saas-platform';
 
 export interface AdminUser {
   id?: string;
