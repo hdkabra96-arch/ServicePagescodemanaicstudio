@@ -121,3 +121,10 @@ export interface CaseStudy {
   tech: string[];
   image: string;
 }
+
+export interface SiteSettings {
+  whatsappNumber: string;
+  whatsappMessage: string;
+  whatsappEnabled: boolean;
+  updatedAt?: string;
+}

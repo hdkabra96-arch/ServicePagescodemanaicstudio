@@ -14,9 +14,10 @@ import { PageView } from '../types';
 
 interface FooterProps {
   onNavigate: (view: PageView) => void;
+  whatsappNumber?: string;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, whatsappNumber }) => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -80,9 +81,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <Twitter className="w-4 h-4" />
               </a>
               <a
-                href="https://wa.me/919876543210"
+                href={`https://wa.me/${(whatsappNumber || '919876543210').replace(/[^\d]/g, '')}`}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="w-8 h-8 rounded-full bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center transition-colors"
                 aria-label="WhatsApp"
               >
@@ -102,7 +103,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               <li><button onClick={() => onNavigate('services')} className="hover:text-orange-600 transition-colors">About Us</button></li>
               <li><button onClick={() => onNavigate('services')} className="hover:text-orange-600 transition-colors">Blog</button></li>
               <li><button onClick={() => onNavigate('enquiry-form')} className="hover:text-orange-600 transition-colors">Contact Us</button></li>
-              <li><button onClick={() => onNavigate('admin-login')} className="text-slate-800 font-semibold hover:text-orange-600 transition-colors flex items-center gap-1">Admin Portal (Full Code Access)</button></li>
             </ul>
           </div>
 
@@ -177,6 +177,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <button onClick={() => onNavigate('services')} className="hover:text-slate-800 transition-colors">Privacy Policy</button>
             <span className="text-slate-300">|</span>
             <button onClick={() => onNavigate('services')} className="hover:text-slate-800 transition-colors">Sitemap</button>
+            <span className="text-slate-300">|</span>
+            <button onClick={() => onNavigate('admin-login')} className="hover:text-orange-600 transition-colors font-medium">Admin</button>
           </div>
         </div>
       </div>

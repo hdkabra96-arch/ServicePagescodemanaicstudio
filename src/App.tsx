@@ -4,11 +4,12 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { PageView, TemplateItem, EnquirySubmission, BusinessTemplateItem } from './types';
+import { PageView, TemplateItem, EnquirySubmission, BusinessTemplateItem, SiteSettings } from './types';
 import { ALL_TEMPLATES } from './data/servicesData';
 import { BUSINESS_TEMPLATES, getBusinessTemplatePages } from './data/businessTemplates';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { WhatsAppButton } from './components/WhatsAppButton';
 import { HeroServices } from './components/HeroServices';
 import { CoreServicesSection } from './components/CoreServicesSection';
 import { MoreWaysSection } from './components/MoreWaysSection';
@@ -90,6 +91,22 @@ export default function App() {
   const [enquiriesModalOpen, setEnquiriesModalOpen] = useState(false);
   const [enquiriesList, setEnquiriesList] = useState<EnquirySubmission[]>([]);
   const [isLoadingEnquiries, setIsLoadingEnquiries] = useState(false);
+
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('cm_site_settings');
+        if (saved) return JSON.parse(saved);
+      } catch {
+        // ignore
+      }
+    }
+    return {
+      whatsappNumber: '919876543210',
+      whatsappMessage: 'Hi Codemaniac Studio! I would like to discuss a website or app project.',
+      whatsappEnabled: true
+    };
+  });
 
   // Admin authentication state
   const [adminUser, setAdminUser] = useState<AdminUser | null>(() => {
@@ -376,9 +393,25 @@ export default function App() {
     }
   };
 
+  const fetchSiteSettings = async () => {
+    try {
+      const res = await fetch('/api/site-settings');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          setSiteSettings(json.data);
+          localStorage.setItem('cm_site_settings', JSON.stringify(json.data));
+        }
+      }
+    } catch {
+      // ignore and keep localStorage/default fallback
+    }
+  };
+
   useEffect(() => {
     fetchEnquiries();
     fetchCustomSites();
+    fetchSiteSettings();
   }, []);
 
   // Navigation handlers with real browser URL sync
@@ -918,6 +951,7 @@ export default function App() {
                 const found = lookupTemplate(code);
                 if (found) handleLivePreview(found);
               }}
+              onSiteSettingsUpdated={(updated) => setSiteSettings(updated)}
             />
           ) : (
             <AdminLoginView
@@ -930,8 +964,14 @@ export default function App() {
 
       {/* Global Footer (hidden on live preview and dedicated admin portal) */}
       {!isImmersiveView && (
-        <Footer onNavigate={handleNavigate} />
+        <Footer
+          onNavigate={handleNavigate}
+          whatsappNumber={siteSettings.whatsappNumber}
+        />
       )}
+
+      {/* Floating Bottom-Left WhatsApp Button (admin-controlled) */}
+      {!isImmersiveView && <WhatsAppButton settings={siteSettings} />}
 
       {/* Search Modal */}
       <SearchModal

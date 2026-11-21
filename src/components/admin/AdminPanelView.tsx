@@ -4,7 +4,7 @@ import {
   FileCode, Layers, Server, RefreshCw, Key, LogOut, ArrowLeft,
   ExternalLink, Package, Cpu, Sparkles, FolderArchive, Smartphone,
   Globe, Database, BarChart3, AlertCircle, HardDriveDownload, Plus,
-  Trash2, Edit3, ShoppingBag
+  Trash2, Edit3, ShoppingBag, MessageCircle, Save
 } from 'lucide-react';
 import {
   getAllDownloadableTemplates,
@@ -14,22 +14,24 @@ import {
 } from '../../services/templateCodeExporter';
 import { CodeInspectorModal } from './CodeInspectorModal';
 import { AddWebsiteModal } from './AddWebsiteModal';
-import { AdminUser, Enquiry } from '../../types';
+import { AdminUser, Enquiry, SiteSettings } from '../../types';
 
 interface AdminPanelViewProps {
   adminUser: AdminUser;
   onLogout: () => void;
   onNavigateHome: () => void;
   onPreviewTemplate?: (code: string) => void;
+  onSiteSettingsUpdated?: (settings: SiteSettings) => void;
 }
 
 export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   adminUser,
   onLogout,
   onNavigateHome,
-  onPreviewTemplate
+  onPreviewTemplate,
+  onSiteSettingsUpdated
 }) => {
-  const [activeTab, setActiveTab] = useState<'repository' | 'custom-sites' | 'export' | 'enquiries' | 'security'>('repository');
+  const [activeTab, setActiveTab] = useState<'repository' | 'custom-sites' | 'whatsapp' | 'export' | 'enquiries' | 'security'>('repository');
   const [templates, setTemplates] = useState<DownloadableTemplateItem[]>([]);
   const [customSites, setCustomSites] = useState<any[]>([]);
   const [loadingCustomSites, setLoadingCustomSites] = useState(false);
@@ -58,6 +60,13 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordStatus, setPasswordStatus] = useState<{ type: 'idle' | 'success' | 'error'; message?: string }>({ type: 'idle' });
 
+  // WhatsApp & Site Settings state
+  const [whatsappNumber, setWhatsappNumber] = useState('919876543210');
+  const [whatsappMessage, setWhatsappMessage] = useState('Hi Codemaniac Studio! I would like to discuss a website or app project.');
+  const [whatsappEnabled, setWhatsappEnabled] = useState(true);
+  const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+  const [whatsappStatus, setWhatsappStatus] = useState<{ type: 'idle' | 'success' | 'error'; message?: string }>({ type: 'idle' });
+
   // Stats
   const [downloadCount, setDownloadCount] = useState<number>(() => {
     const saved = localStorage.getItem('cm_admin_download_count');
@@ -68,7 +77,76 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     setTemplates(getAllDownloadableTemplates());
     loadEnquiries();
     loadCustomSites();
+    loadSiteSettings();
   }, []);
+
+  const loadSiteSettings = async () => {
+    try {
+      const res = await fetch('/api/site-settings');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          setWhatsappNumber(json.data.whatsappNumber || '');
+          setWhatsappMessage(json.data.whatsappMessage || '');
+          setWhatsappEnabled(json.data.whatsappEnabled !== false);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load site settings:', err);
+    }
+  };
+
+  const handleSaveWhatsappSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setWhatsappStatus({ type: 'idle' });
+    setSavingWhatsapp(true);
+
+    const cleanedDigits = whatsappNumber.replace(/[^\d]/g, '');
+    if (whatsappEnabled && cleanedDigits.length < 7) {
+      setWhatsappStatus({
+        type: 'error',
+        message: 'Please enter a valid WhatsApp phone number including country code (at least 7 digits).'
+      });
+      setSavingWhatsapp(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/site-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          whatsappNumber: cleanedDigits,
+          whatsappMessage: whatsappMessage.trim(),
+          whatsappEnabled
+        })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || 'Failed to save WhatsApp settings');
+      }
+
+      setWhatsappNumber(json.data.whatsappNumber);
+      setWhatsappMessage(json.data.whatsappMessage);
+      setWhatsappEnabled(json.data.whatsappEnabled);
+      localStorage.setItem('cm_site_settings', JSON.stringify(json.data));
+      onSiteSettingsUpdated?.(json.data);
+
+      setWhatsappStatus({
+        type: 'success',
+        message: 'WhatsApp settings saved! The bottom-left WhatsApp button on your website is now updated.'
+      });
+      setDownloadSuccessMessage('WhatsApp number & floating button settings updated live!');
+      setTimeout(() => setDownloadSuccessMessage(null), 5000);
+    } catch (err: any) {
+      setWhatsappStatus({
+        type: 'error',
+        message: err?.message || 'Could not save WhatsApp settings. Please try again.'
+      });
+    } finally {
+      setSavingWhatsapp(false);
+    }
+  };
 
   const loadCustomSites = async () => {
     setLoadingCustomSites(true);
@@ -354,6 +432,17 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
             {customSites.length > 0 && (
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             )}
+          </button>
+          <button
+            onClick={() => setActiveTab('whatsapp')}
+            className={`py-3 px-4 text-xs font-semibold uppercase tracking-wider border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors ${
+              activeTab === 'whatsapp'
+                ? 'border-emerald-500 text-emerald-400 bg-emerald-950/20'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700'
+            }`}
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            <span>WhatsApp Button</span>
           </button>
           <button
             onClick={() => setActiveTab('export')}
@@ -1071,6 +1160,147 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB: WHATSAPP BUTTON SETTINGS */}
+        {activeTab === 'whatsapp' && (
+          <div className="max-w-3xl mx-auto space-y-6">
+            <div className="bg-gradient-to-r from-emerald-950/70 via-slate-900/90 to-slate-900 border border-emerald-800/60 rounded-2xl p-6 sm:p-8">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-6 h-6" />
+                </div>
+                <div className="space-y-1.5">
+                  <h2 className="text-xl font-bold text-white tracking-tight">
+                    WhatsApp Floating Button Settings
+                  </h2>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Configure the WhatsApp number displayed in the floating button on the bottom-left side of your website. Changes take effect immediately for all visitors.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-6">
+              {whatsappStatus.type === 'success' && (
+                <div className="p-3.5 rounded-xl bg-emerald-950/70 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                  <span>{whatsappStatus.message}</span>
+                </div>
+              )}
+
+              {whatsappStatus.type === 'error' && (
+                <div className="p-3.5 rounded-xl bg-rose-950/70 border border-rose-800 text-rose-300 text-xs flex items-center gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>{whatsappStatus.message}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveWhatsappSettings} className="space-y-5">
+                {/* Enable / Disable Toggle */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Show Floating WhatsApp Button</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Displays a fixed WhatsApp chat button on the bottom-left corner of the website.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={whatsappEnabled}
+                    onClick={() => setWhatsappEnabled(!whatsappEnabled)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${
+                      whatsappEnabled ? 'bg-[#25D366]' : 'bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${
+                        whatsappEnabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* WhatsApp Number Input */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-200">
+                    WhatsApp Phone Number (with Country Code)
+                  </label>
+                  <input
+                    type="tel"
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value)}
+                    placeholder="e.g., 919876543210 or +91 98765 43210"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+                  />
+                  <p className="text-[11px] text-slate-400">
+                    Include your country code without leading zeros (e.g., <span className="font-mono text-slate-300">91</span> for India, <span className="font-mono text-slate-300">1</span> for US/Canada). Spaces, dashes, and <span className="font-mono text-slate-300">+</span> signs are automatically formatted.
+                  </p>
+                </div>
+
+                {/* Pre-filled Message */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-200">
+                    Default Pre-filled Chat Message (Optional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={whatsappMessage}
+                    onChange={(e) => setWhatsappMessage(e.target.value)}
+                    placeholder="Hi! I would like to inquire about your services."
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 resize-none"
+                  />
+                </div>
+
+                {/* Live Link & Button Preview */}
+                <div className="p-4 rounded-xl bg-slate-950/90 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      Live Preview
+                    </span>
+                    <span className={`text-[11px] font-semibold ${whatsappEnabled ? 'text-emerald-400' : 'text-slate-500'}`}>
+                      {whatsappEnabled ? 'Visible on Bottom-Left' : 'Hidden'}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="text-xs text-slate-400 font-mono truncate">
+                      {whatsappNumber.replace(/[^\d]/g, '').length >= 7
+                        ? `https://wa.me/${whatsappNumber.replace(/[^\d]/g, '')}`
+                        : 'Enter at least 7 digits to generate WhatsApp link'}
+                    </div>
+
+                    {whatsappEnabled && whatsappNumber.replace(/[^\d]/g, '').length >= 7 && (
+                      <a
+                        href={`https://wa.me/${whatsappNumber.replace(/[^\d]/g, '')}${
+                          whatsappMessage.trim() ? `?text=${encodeURIComponent(whatsappMessage.trim())}` : ''
+                        }`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1EBE5D] text-white px-4 py-2 rounded-full text-xs font-semibold shadow-md shrink-0 self-start sm:self-auto transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        <span>Test WhatsApp Chat</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={savingWhatsapp}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors shadow-sm disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{savingWhatsapp ? 'Saving...' : 'Save WhatsApp Settings'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 

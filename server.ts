@@ -496,11 +496,92 @@ app.delete('/api/custom-sites/:id', (req, res) => {
   res.json({ success: true, message: 'Custom website removed from gallery.' });
 });
 
+// Site Settings (WhatsApp Floating Button & Contact Settings)
+const SITE_SETTINGS_FILE = path.join(DATA_DIR, 'site-settings.json');
 
+const DEFAULT_SITE_SETTINGS = {
+  whatsappNumber: '919876543210',
+  whatsappMessage: 'Hi Codemaniac Studio! I would like to discuss a website or app project.',
+  whatsappEnabled: true,
+  updatedAt: new Date().toISOString()
+};
+
+function ensureSiteSettingsStorage() {
+  ensureDataStorage();
+  if (!fs.existsSync(SITE_SETTINGS_FILE)) {
+    fs.writeFileSync(SITE_SETTINGS_FILE, JSON.stringify(DEFAULT_SITE_SETTINGS, null, 2), 'utf-8');
+  }
+}
+
+function readSiteSettings() {
+  ensureSiteSettingsStorage();
+  try {
+    const raw = fs.readFileSync(SITE_SETTINGS_FILE, 'utf-8');
+    const parsed = JSON.parse(raw);
+    return {
+      ...DEFAULT_SITE_SETTINGS,
+      ...parsed
+    };
+  } catch (err) {
+    console.error('Error reading site settings:', err);
+    return { ...DEFAULT_SITE_SETTINGS };
+  }
+}
+
+function saveSiteSettings(settings: any) {
+  ensureSiteSettingsStorage();
+  fs.writeFileSync(SITE_SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf-8');
+}
+
+app.get('/api/site-settings', (_req, res) => {
+  const settings = readSiteSettings();
+  res.json({ success: true, data: settings });
+});
+
+app.put('/api/site-settings', (req, res) => {
+  const { whatsappNumber, whatsappMessage, whatsappEnabled } = req.body || {};
+
+  const current = readSiteSettings();
+  const cleanedDigits =
+    whatsappNumber !== undefined
+      ? String(whatsappNumber).replace(/[^\d]/g, '').slice(0, 15)
+      : current.whatsappNumber;
+
+  const nextEnabled =
+    typeof whatsappEnabled === 'boolean' ? whatsappEnabled : current.whatsappEnabled;
+
+  if (nextEnabled && cleanedDigits.length < 7) {
+    return res.status(400).json({
+      success: false,
+      message: 'Please enter a valid WhatsApp phone number including country code (at least 7 digits).'
+    });
+  }
+
+  const nextMessage =
+    whatsappMessage !== undefined
+      ? String(whatsappMessage).trim().slice(0, 500)
+      : current.whatsappMessage;
+
+  const updated = {
+    ...current,
+    whatsappNumber: cleanedDigits,
+    whatsappMessage: nextMessage,
+    whatsappEnabled: nextEnabled,
+    updatedAt: new Date().toISOString()
+  };
+
+  saveSiteSettings(updated);
+  res.json({
+    success: true,
+    message: 'WhatsApp settings saved and published to the website.',
+    data: updated
+  });
+});
 
 // Vite Middleware mounting
 async function startServer() {
   ensureDataStorage();
+  ensureSiteSettingsStorage();
 
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running at http://localhost:${PORT}`);
