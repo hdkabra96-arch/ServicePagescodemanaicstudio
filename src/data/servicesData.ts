@@ -128,6 +128,7 @@ export const WEBSITE_SOLUTIONS = [
 ];
 
 export const WEB_APP_SOLUTIONS = [
+  { id: 'restoflow', name: 'RestoFlow — Restaurant Management & POS Web Application', icon: 'Flame', color: 'orange', badge: 'Live Full-Stack App', desc: 'Complete commercial restaurant POS, dining floor & tables, kitchen display (KDS), inventory, recipe costing, staff shifts, CRM, and PDF/Excel analytics.' },
   { id: 'admin-panel', name: 'Admin Panels', icon: 'Settings', color: 'orange', desc: 'Manage your business operations with powerful and easy-to-use admin panels.' },
   { id: 'dashboard', name: 'Dashboard Development', icon: 'BarChart3', color: 'blue', desc: 'Get real-time insights with interactive and data-driven dashboards.' },
   { id: 'crm', name: 'CRM Systems', icon: 'UserCheck', color: 'pink', desc: 'Manage your customers, leads, pipelines, and sales team.' },

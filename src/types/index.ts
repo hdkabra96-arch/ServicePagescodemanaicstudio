@@ -18,7 +18,8 @@ export type PageView =
   | 'success'
   | 'admin-login'
   | 'admin-panel'
-  | 'saas-platform';
+  | 'saas-platform'
+  | 'restoflow';
 
 export interface AdminUser {
   id?: string;

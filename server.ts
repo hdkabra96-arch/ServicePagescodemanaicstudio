@@ -1,19 +1,35 @@
 import express from 'express';
+import http from 'http';
 import { createServer as createViteServer } from 'vite';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getSaasDb } from './server/saas/db.ts';
+import {
+  getSaasDb,
+  hashPasswordSync,
+  verifyPasswordSync
+} from './server/saas/db.ts';
+import {
+  createRateLimiter,
+  generateOpaqueToken,
+  hashOpaqueToken,
+  isSafeHttpUrl,
+  parseCookies,
+  verifyOriginMatchesHost
+} from './server/saas/security.ts';
 import { createSaasAuthRouter } from './server/saas/authRoutes.ts';
 import { createSaasDashboardRouter } from './server/saas/dashboardRoutes.ts';
 import { createSaasModulesRouter } from './server/saas/modulesRoutes.ts';
 import { createSaasAdvancedRouter } from './server/saas/advancedRoutes.ts';
 import { createSaasBillingRouter } from './server/saas/billingRoutes.ts';
+import { getRestoFlowDb } from './server/restoflow/db.ts';
+import { createRestoFlowRouter } from './server/restoflow/routes/index.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1);
 
 function resolvePort(): number {
   const portArgIndex = process.argv.indexOf('--port');
@@ -34,7 +50,13 @@ function resolvePort(): number {
 
 const PORT = resolvePort();
 
-app.use(express.json());
+app.use(express.json({ limit: '256kb' }));
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
 
 // Health check endpoints for supervisor and monitoring
 app.get(['/health', '/__health'], (_req, res) => {
@@ -191,82 +213,240 @@ app.post('/api/enquiries', (req, res) => {
   });
 });
 
-// Admin Configuration & Auth Storage
+// Studio Admin Configuration & Cryptographic Session Auth
 const ADMIN_CONFIG_FILE = path.join(DATA_DIR, 'admin-config.json');
+const STUDIO_ADMIN_COOKIE = 'cm_studio_admin_session';
+const STUDIO_ADMIN_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+const studioAdminSessions = new Map<string, { expiresAt: number }>();
 
-const DEFAULT_ADMIN = {
+interface StudioAdminConfig {
+  id: string;
+  username: string;
+  email: string;
+  passwordHash: string | null;
+  role: string;
+  lastLogin: string | null;
+}
+
+const DEFAULT_ADMIN_PROFILE: StudioAdminConfig = {
   id: 'cm-admin-master',
   username: 'admin',
   email: 'admin@codemaniac.com',
-  password: 'admin@codemaniac2026',
+  passwordHash: null,
   role: 'superadmin',
-  lastLogin: new Date().toISOString()
+  lastLogin: null
 };
 
-function readAdminConfig() {
+function readAdminConfig(): StudioAdminConfig {
   ensureDataStorage();
   try {
     if (fs.existsSync(ADMIN_CONFIG_FILE)) {
-      const data = fs.readFileSync(ADMIN_CONFIG_FILE, 'utf-8');
-      return JSON.parse(data);
+      const raw = JSON.parse(fs.readFileSync(ADMIN_CONFIG_FILE, 'utf-8'));
+      const sanitized: StudioAdminConfig = {
+        id: raw.id || DEFAULT_ADMIN_PROFILE.id,
+        username: raw.username || DEFAULT_ADMIN_PROFILE.username,
+        email: raw.email || DEFAULT_ADMIN_PROFILE.email,
+        passwordHash: typeof raw.passwordHash === 'string' && raw.passwordHash.includes(':') ? raw.passwordHash : null,
+        role: raw.role || DEFAULT_ADMIN_PROFILE.role,
+        lastLogin: raw.lastLogin || null
+      };
+      // Scrub legacy plaintext password field if present on disk
+      if ('password' in raw) {
+        fs.writeFileSync(ADMIN_CONFIG_FILE, JSON.stringify(sanitized, null, 2), 'utf-8');
+      }
+      return sanitized;
     }
   } catch (err) {
     console.error('Error reading admin config:', err);
   }
-  // If not found or error, initialize
-  fs.writeFileSync(ADMIN_CONFIG_FILE, JSON.stringify(DEFAULT_ADMIN, null, 2), 'utf-8');
-  return DEFAULT_ADMIN;
+  return { ...DEFAULT_ADMIN_PROFILE };
 }
 
-function saveAdminConfig(cfg: any) {
+function saveAdminConfig(cfg: StudioAdminConfig) {
   ensureDataStorage();
-  fs.writeFileSync(ADMIN_CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf-8');
+  const safeCfg: StudioAdminConfig = {
+    id: cfg.id,
+    username: cfg.username,
+    email: cfg.email,
+    passwordHash: cfg.passwordHash,
+    role: cfg.role,
+    lastLogin: cfg.lastLogin
+  };
+  fs.writeFileSync(ADMIN_CONFIG_FILE, JSON.stringify(safeCfg, null, 2), 'utf-8');
 }
 
-// Admin API Endpoints
-app.get('/api/admin/credentials-hint', (_req, res) => {
+function setStudioAdminCookie(req: express.Request, res: express.Response, rawToken: string) {
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  const parts = [
+    `${STUDIO_ADMIN_COOKIE}=${encodeURIComponent(rawToken)}`,
+    'Path=/',
+    'HttpOnly',
+    `Max-Age=${Math.floor(STUDIO_ADMIN_SESSION_TTL_MS / 1000)}`,
+    isSecure ? 'SameSite=None; Secure; Partitioned' : 'SameSite=Lax'
+  ];
+  res.setHeader('Set-Cookie', parts.join('; '));
+}
+
+function clearStudioAdminCookie(req: express.Request, res: express.Response) {
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  const parts = [
+    `${STUDIO_ADMIN_COOKIE}=`,
+    'Path=/',
+    'HttpOnly',
+    'Max-Age=0',
+    isSecure ? 'SameSite=None; Secure; Partitioned' : 'SameSite=Lax'
+  ];
+  res.setHeader('Set-Cookie', parts.join('; '));
+}
+
+function extractStudioAdminToken(req: express.Request): { token: string; source: 'bearer' | 'cookie' } | null {
+  const auth = req.headers.authorization;
+  if (auth && auth.startsWith('Bearer ')) {
+    const token = auth.slice(7).trim();
+    if (token.length >= 32) return { token, source: 'bearer' };
+  }
+  const cookies = parseCookies(req.headers.cookie);
+  if (cookies[STUDIO_ADMIN_COOKIE] && cookies[STUDIO_ADMIN_COOKIE].length >= 32) {
+    return { token: cookies[STUDIO_ADMIN_COOKIE], source: 'cookie' };
+  }
+  return null;
+}
+
+function issueStudioAdminSession(req: express.Request, res: express.Response): string {
+  const rawToken = generateOpaqueToken();
+  const tokenHash = hashOpaqueToken(rawToken);
+  studioAdminSessions.set(tokenHash, { expiresAt: Date.now() + STUDIO_ADMIN_SESSION_TTL_MS });
+  setStudioAdminCookie(req, res, rawToken);
+  return rawToken;
+}
+
+function requireStudioAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const extracted = extractStudioAdminToken(req);
+  if (!extracted) {
+    return res.status(401).json({ success: false, message: 'Administrator authentication required.' });
+  }
+  const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method.toUpperCase());
+  if (isMutation && extracted.source === 'cookie' && !verifyOriginMatchesHost(req)) {
+    return res.status(403).json({ success: false, message: 'Cross-origin request rejected.' });
+  }
+
+  const tokenHash = hashOpaqueToken(extracted.token);
+  const record = studioAdminSessions.get(tokenHash);
+  if (!record || record.expiresAt < Date.now()) {
+    studioAdminSessions.delete(tokenHash);
+    return res.status(401).json({ success: false, message: 'Invalid or expired administrator session.' });
+  }
+  next();
+}
+
+const studioAdminLoginLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  keyPrefix: 'studio_admin_login'
+});
+
+function isStrongAdminPassword(password: string): boolean {
+  return password.length >= 8 && /[A-Za-z]/.test(password) && /[0-9]/.test(password);
+}
+
+// Studio Admin Auth Status (never exposes passwords)
+app.get('/api/admin/status', (_req, res) => {
   const config = readAdminConfig();
+  const envConfigured = Boolean(process.env.STUDIO_ADMIN_PASSWORD && process.env.STUDIO_ADMIN_PASSWORD.trim().length > 0);
   res.json({
+    success: true,
+    configured: envConfigured || Boolean(config.passwordHash),
+    envManaged: envConfigured,
     primaryId: config.email,
-    username: config.username,
-    role: config.role,
-    hint: 'Default ID: admin@codemaniac.com or admin | Password: admin@codemaniac2026'
+    username: config.username
   });
 });
 
-app.post('/api/admin/login', (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
+// One-time first-run Studio Admin setup (locks permanently once claimed or when STUDIO_ADMIN_PASSWORD env is set)
+app.post('/api/admin/setup', studioAdminLoginLimiter, (req, res) => {
+  const envPass = process.env.STUDIO_ADMIN_PASSWORD?.trim();
+  const config = readAdminConfig();
+  if (envPass || config.passwordHash) {
+    return res.status(403).json({
+      success: false,
+      message: 'Studio Admin credentials are already configured. Please sign in.'
+    });
+  }
+
+  const password = String(req.body?.password || '').trim();
+  const email = String(req.body?.email || config.email).trim().toLowerCase();
+  if (!isStrongAdminPassword(password)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Admin password must be at least 8 characters and include letters and numbers.'
+    });
+  }
+
+  config.email = email || config.email;
+  config.passwordHash = hashPasswordSync(password);
+  config.lastLogin = new Date().toISOString();
+  saveAdminConfig(config);
+
+  const token = issueStudioAdminSession(req, res);
+  return res.status(201).json({
+    success: true,
+    token,
+    user: {
+      id: config.id,
+      adminId: config.email,
+      name: 'Master Administrator',
+      username: config.username,
+      email: config.email,
+      role: config.role,
+      lastLogin: config.lastLogin
+    }
+  });
+});
+
+app.post('/api/admin/login', studioAdminLoginLimiter, (req, res) => {
+  const { username, id, password } = req.body || {};
+  const rawUser = String(username || id || '').trim().toLowerCase();
+  const rawPass = String(password || '').trim();
+
+  if (!rawUser || !rawPass) {
     return res.status(400).json({ success: false, message: 'Please provide both username/email and password.' });
   }
 
   const config = readAdminConfig();
-  const inputUser = String(username).trim().toLowerCase();
-  const inputPass = String(password).trim();
+  const envPass = process.env.STUDIO_ADMIN_PASSWORD?.trim();
 
-  const isMatchUser = (
-    inputUser === config.username.toLowerCase() ||
-    inputUser === config.email.toLowerCase() ||
-    inputUser === 'admin' ||
-    inputUser === 'codemaniac'
-  );
+  if (!envPass && !config.passwordHash) {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin password has not been claimed yet. Complete first-run setup first.'
+    });
+  }
 
-  const isMatchPass = (
-    inputPass === config.password ||
-    inputPass === 'admin@codemaniac2026' ||
-    inputPass === 'admin123'
-  );
+  const isMatchUser =
+    rawUser === config.username.toLowerCase() || rawUser === config.email.toLowerCase();
+
+  let isMatchPass = false;
+  if (envPass) {
+    // Timing-safe comparison for environment-managed secret
+    const a = Buffer.from(hashOpaqueToken(rawPass), 'hex');
+    const b = Buffer.from(hashOpaqueToken(envPass), 'hex');
+    isMatchPass = a.length === b.length && a.equals(b);
+  } else if (config.passwordHash) {
+    isMatchPass = verifyPasswordSync(rawPass, config.passwordHash);
+  }
 
   if (isMatchUser && isMatchPass) {
-    const token = `cm_sec_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     config.lastLogin = new Date().toISOString();
     saveAdminConfig(config);
+    const token = issueStudioAdminSession(req, res);
 
     return res.json({
       success: true,
       token,
       user: {
         id: config.id,
+        adminId: config.email,
+        name: 'Master Administrator',
         username: config.username,
         email: config.email,
         role: config.role,
@@ -281,35 +461,54 @@ app.post('/api/admin/login', (req, res) => {
   });
 });
 
-app.get('/api/admin/verify', (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer cm_sec_')) {
-    const config = readAdminConfig();
-    return res.json({
-      success: true,
-      user: {
-        id: config.id,
-        username: config.username,
-        email: config.email,
-        role: config.role
-      }
-    });
-  }
-  res.status(401).json({ success: false, message: 'Unauthorized session.' });
+app.get('/api/admin/verify', requireStudioAdmin, (_req, res) => {
+  const config = readAdminConfig();
+  return res.json({
+    success: true,
+    user: {
+      id: config.id,
+      adminId: config.email,
+      name: 'Master Administrator',
+      username: config.username,
+      email: config.email,
+      role: config.role,
+      lastLogin: config.lastLogin
+    }
+  });
 });
 
-app.post('/api/admin/update-credentials', (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-  if (!newPassword || newPassword.length < 6) {
-    return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
+app.post('/api/admin/logout', (req, res) => {
+  const extracted = extractStudioAdminToken(req);
+  if (extracted) {
+    studioAdminSessions.delete(hashOpaqueToken(extracted.token));
+  }
+  clearStudioAdminCookie(req, res);
+  res.json({ success: true, message: 'Admin session closed.' });
+});
+
+app.post('/api/admin/update-credentials', requireStudioAdmin, (req, res) => {
+  if (process.env.STUDIO_ADMIN_PASSWORD?.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Admin password is managed via the STUDIO_ADMIN_PASSWORD environment secret.'
+    });
+  }
+
+  const currentPassword = String(req.body?.currentPassword || '').trim();
+  const newPassword = String(req.body?.newPassword || '').trim();
+  if (!isStrongAdminPassword(newPassword)) {
+    return res.status(400).json({
+      success: false,
+      message: 'New password must be at least 8 characters and include letters and numbers.'
+    });
   }
 
   const config = readAdminConfig();
-  if (currentPassword !== config.password && currentPassword !== 'admin@codemaniac2026') {
+  if (!config.passwordHash || !verifyPasswordSync(currentPassword, config.passwordHash)) {
     return res.status(401).json({ success: false, message: 'Current password does not match.' });
   }
 
-  config.password = newPassword.trim();
+  config.passwordHash = hashPasswordSync(newPassword);
   saveAdminConfig(config);
 
   res.json({
@@ -318,7 +517,7 @@ app.post('/api/admin/update-credentials', (req, res) => {
   });
 });
 
-app.patch('/api/enquiries/:id', (req, res) => {
+app.patch('/api/enquiries/:id', requireStudioAdmin, (req, res) => {
   const { status, notes } = req.body;
   const enquiries = readEnquiries();
   const index = enquiries.findIndex((e: any) => e.id.toLowerCase() === req.params.id.toLowerCase());
@@ -333,7 +532,7 @@ app.patch('/api/enquiries/:id', (req, res) => {
   res.json({ success: true, data: enquiries[index] });
 });
 
-app.delete('/api/enquiries/:id', (req, res) => {
+app.delete('/api/enquiries/:id', requireStudioAdmin, (req, res) => {
   const enquiries = readEnquiries();
   const filtered = enquiries.filter((e: any) => e.id.toLowerCase() !== req.params.id.toLowerCase());
   saveEnquiries(filtered);
@@ -403,7 +602,7 @@ app.get('/api/custom-sites', (_req, res) => {
   res.json({ success: true, count: sites.length, data: sites });
 });
 
-app.post('/api/custom-sites', (req, res) => {
+app.post('/api/custom-sites', requireStudioAdmin, (req, res) => {
   const {
     name,
     externalUrl,
@@ -425,17 +624,29 @@ app.post('/api/custom-sites', (req, res) => {
     });
   }
 
-  // Validate URL format
-  let formattedUrl = externalUrl.trim();
-  if (!/^https?:\/\//i.test(formattedUrl)) {
+  // Strictly allow only http:// or https:// URLs (blocks javascript: and data: schemes)
+  let formattedUrl = String(externalUrl).trim();
+  if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(formattedUrl)) {
     formattedUrl = `https://${formattedUrl}`;
+  }
+  if (!isSafeHttpUrl(formattedUrl)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Live URL must use a valid http:// or https:// address.'
+    });
+  }
+  if (thumbnail && !isSafeHttpUrl(String(thumbnail))) {
+    return res.status(400).json({
+      success: false,
+      message: 'Thumbnail URL must use a valid http:// or https:// address.'
+    });
   }
 
   const sites = readCustomSites();
   const counter = sites.length + 1;
   const detectedHost = platformHost || (formattedUrl.includes('vercel.app') ? 'Vercel' : formattedUrl.includes('netlify.app') ? 'Netlify' : 'Custom Host');
 
-  const slug = name
+  const slug = String(name)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
@@ -443,14 +654,14 @@ app.post('/api/custom-sites', (req, res) => {
   const newSite = {
     id: `site-custom-${Date.now()}`,
     templateCode: `EXT-${String(counter).padStart(3, '0')}`,
-    name: name.trim(),
+    name: String(name).trim(),
     serviceCategory: serviceCategory || 'E-commerce Website',
     industryTag: industryTag || 'Custom',
-    description: description ? description.trim() : `Custom production website deployed at ${formattedUrl}`,
+    description: description ? String(description).trim() : `Custom production website deployed at ${formattedUrl}`,
     previewType: 'external-iframe',
     externalUrl: formattedUrl,
     imagePlaceholderGradient: 'from-blue-600 via-indigo-600 to-purple-600',
-    thumbnail: thumbnail || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80',
+    thumbnail: thumbnail ? String(thumbnail).trim() : 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80',
     features: Array.isArray(features) && features.length > 0 ? features : ['Live Production Deployment', 'Responsive Design', 'Interactive User Interface', 'Fast Page Performance'],
     tags: Array.isArray(tags) && tags.length > 0 ? tags : [detectedHost, 'Custom Website', 'Live Preview'],
     tier: tier || 'premium',
@@ -473,17 +684,42 @@ app.post('/api/custom-sites', (req, res) => {
   });
 });
 
-app.put('/api/custom-sites/:id', (req, res) => {
+app.put('/api/custom-sites/:id', requireStudioAdmin, (req, res) => {
   const sites = readCustomSites();
   const index = sites.findIndex((s: any) => s.id.toLowerCase() === req.params.id.toLowerCase());
   if (index === -1) {
     return res.status(404).json({ success: false, message: 'Custom website not found.' });
   }
 
+  let nextExternalUrl = sites[index].externalUrl;
+  if (req.body?.externalUrl !== undefined) {
+    let candidate = String(req.body.externalUrl).trim();
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(candidate)) {
+      candidate = `https://${candidate}`;
+    }
+    if (!isSafeHttpUrl(candidate)) {
+      return res.status(400).json({ success: false, message: 'Live URL must use a valid http:// or https:// address.' });
+    }
+    nextExternalUrl = candidate;
+  }
+  if (req.body?.thumbnail !== undefined && req.body.thumbnail && !isSafeHttpUrl(String(req.body.thumbnail))) {
+    return res.status(400).json({ success: false, message: 'Thumbnail URL must use a valid http:// or https:// address.' });
+  }
+
   const updated = {
     ...sites[index],
-    ...req.body,
-    id: sites[index].id, // preserve id
+    name: req.body?.name !== undefined ? String(req.body.name).trim() : sites[index].name,
+    serviceCategory: req.body?.serviceCategory ?? sites[index].serviceCategory,
+    industryTag: req.body?.industryTag ?? sites[index].industryTag,
+    description: req.body?.description !== undefined ? String(req.body.description).trim() : sites[index].description,
+    externalUrl: nextExternalUrl,
+    thumbnail: req.body?.thumbnail !== undefined ? String(req.body.thumbnail).trim() : sites[index].thumbnail,
+    features: Array.isArray(req.body?.features) ? req.body.features : sites[index].features,
+    tags: Array.isArray(req.body?.tags) ? req.body.tags : sites[index].tags,
+    tier: req.body?.tier ?? sites[index].tier,
+    tierLabel: req.body?.tierLabel ?? sites[index].tierLabel,
+    platformHost: req.body?.platformHost ?? sites[index].platformHost,
+    id: sites[index].id,
     isExternal: true,
     previewType: 'external-iframe',
     updatedAt: new Date().toISOString()
@@ -495,7 +731,7 @@ app.put('/api/custom-sites/:id', (req, res) => {
   res.json({ success: true, message: 'Website details updated successfully.', data: updated });
 });
 
-app.delete('/api/custom-sites/:id', (req, res) => {
+app.delete('/api/custom-sites/:id', requireStudioAdmin, (req, res) => {
   const sites = readCustomSites();
   const filtered = sites.filter((s: any) => s.id.toLowerCase() !== req.params.id.toLowerCase());
   saveCustomSites(filtered);
@@ -544,7 +780,7 @@ app.get('/api/site-settings', (_req, res) => {
   res.json({ success: true, data: settings });
 });
 
-app.put('/api/site-settings', (req, res) => {
+app.put('/api/site-settings', requireStudioAdmin, (req, res) => {
   const { whatsappNumber, whatsappMessage, whatsappEnabled } = req.body || {};
 
   const current = readSiteSettings();
@@ -591,27 +827,30 @@ app.use('/api/saas', createSaasModulesRouter());
 app.use('/api/saas', createSaasAdvancedRouter());
 app.use('/api/saas', createSaasBillingRouter());
 
-// Vite Middleware mounting
+// RestoFlow — Portfolio Project #1: Restaurant Management & POS REST APIs
+app.use('/api/restoflow', createRestoFlowRouter());
+
+// Centralized JSON error handler for API routes (prevents leaking HTML stack traces)
+app.use('/api', (err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  if (err?.type === 'entity.parse.failed') {
+    return res.status(400).json({ success: false, message: 'Malformed JSON request body.' });
+  }
+  if (err?.type === 'entity.too.large') {
+    return res.status(413).json({ success: false, message: 'Request payload exceeds the 256 KB limit.' });
+  }
+  console.error('[API Error]', err);
+  res.status(500).json({ success: false, message: 'An unexpected server error occurred.' });
+});
+
+// Vite Middleware mounting (mounted BEFORE binding port so "/" never returns 404 during boot)
 async function startServer() {
   ensureDataStorage();
   ensureSiteSettingsStorage();
   getSaasDb();
+  getRestoFlowDb();
 
-  const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-  });
-
-  server.on('error', (err: any) => {
-    if (err.code === 'EADDRINUSE') {
-      console.warn(`Port ${PORT} in use, retrying connection in 1 second...`);
-      setTimeout(() => {
-        server.close();
-        server.listen(PORT, '0.0.0.0');
-      }, 1000);
-    } else {
-      console.error('Server error:', err);
-    }
-  });
+  const httpServer = http.createServer(app);
+  let viteServer: Awaited<ReturnType<typeof createViteServer>> | null = null;
 
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'dist')));
@@ -619,20 +858,47 @@ async function startServer() {
       res.sendFile(path.join(__dirname, 'dist', 'index.html'));
     });
   } else {
-    try {
-      const vite = await createViteServer({
-        server: {
-          middlewareMode: true,
-          allowedHosts: true
-        },
-        appType: 'spa'
-      });
-      app.use(vite.middlewares);
-      console.log('Vite SPA middleware ready.');
-    } catch (viteErr) {
-      console.error('Vite dev server init error:', viteErr);
-    }
+    const disableHmr = process.env.DISABLE_HMR === 'true';
+    viteServer = await createViteServer({
+      server: {
+        middlewareMode: true,
+        allowedHosts: true,
+        hmr: disableHmr ? false : { server: httpServer }
+      },
+      appType: 'spa'
+    });
+    app.use(viteServer.middlewares);
+    console.log('Vite SPA middleware ready.');
   }
+
+  httpServer.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`Port ${PORT} in use, retrying connection in 1 second...`);
+      setTimeout(() => {
+        httpServer.close();
+        httpServer.listen(PORT, '0.0.0.0');
+      }, 1000);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
+
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
+
+  const shutdown = async () => {
+    try {
+      if (viteServer) await viteServer.close();
+    } catch {
+      // ignore
+    }
+    httpServer.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 2000).unref();
+  };
+
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
 }
 
 startServer().catch((err) => {

@@ -41,6 +41,7 @@ import { AdminLoginView } from './components/admin/AdminLoginView';
 import { AdminPanelView } from './components/admin/AdminPanelView';
 import { ExternalWebsiteLivePreview } from './components/demos/ExternalWebsiteLivePreview';
 import { SaasPlatformApp } from './components/saas/SaasPlatformApp';
+import { RestoFlowApp } from './components/restoflow/RestoFlowApp';
 import { AdminUser } from './types';
 
 let customSitesStore: TemplateItem[] = [];
@@ -109,20 +110,30 @@ export default function App() {
     };
   });
 
-  // Admin authentication state
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(() => {
-    if (typeof window === 'undefined') return null;
-    const savedUser = localStorage.getItem('cm_admin_user');
-    const savedToken = localStorage.getItem('cm_admin_token');
-    if (savedUser && savedToken) {
-      try {
-        return JSON.parse(savedUser);
-      } catch {
-        return null;
-      }
+  // Admin authentication state (held in memory + server HttpOnly cookie; never stored in localStorage)
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [adminToken, setAdminToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Scrub any legacy localStorage admin keys from older sessions
+    try {
+      localStorage.removeItem('cm_admin_token');
+      localStorage.removeItem('cm_admin_user');
+      localStorage.removeItem('cm_admin_custom_pwd');
+    } catch {
+      // ignore storage access errors
     }
-    return null;
-  });
+    fetch('/api/admin/verify', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.success && data.user) {
+          setAdminUser(data.user);
+        }
+      })
+      .catch(() => {
+        // not signed in
+      });
+  }, []);
 
   // Determine canonical URL from application state
   const computeUrl = useCallback(
@@ -172,6 +183,8 @@ export default function App() {
           return '/admin';
         case 'saas-platform':
           return '/saas';
+        case 'restoflow':
+          return '/restoflow';
         case 'live-preview': {
           const tmpl = template || activeTemplate;
           const slug = (tmpl as any)?.slug || tmpl?.id || 'preview';
@@ -210,18 +223,17 @@ export default function App() {
     const second = segments[1]?.toLowerCase();
     const third = segments[2]?.toLowerCase();
 
+    // Codemaniac Studio homepage route: /studio
+    if (first === 'studio') {
+      setCurrentView('services');
+      return;
+    }
+
     // 0. Admin Portal & Login routes: /admin, /admin/login, /admin-panel
     if (first === 'admin' || first === 'admin-panel' || first === 'admin-login') {
-      const savedUser = localStorage.getItem('cm_admin_user');
-      const savedToken = localStorage.getItem('cm_admin_token');
-      if (second === 'login' || !savedUser || !savedToken) {
+      if (second === 'login' || !adminUser) {
         setCurrentView('admin-login');
       } else {
-        try {
-          if (savedUser) setAdminUser(JSON.parse(savedUser));
-        } catch {
-          // ignore
-        }
         setCurrentView('admin-panel');
       }
       return;
@@ -230,6 +242,12 @@ export default function App() {
     // 0b. Commercial SaaS Platform route: /saas
     if (first === 'saas' || first === 'saas-platform') {
       setCurrentView('saas-platform');
+      return;
+    }
+
+    // 0c. Portfolio Project #1 — RestoFlow route: /restoflow
+    if (first === 'restoflow') {
+      setCurrentView('restoflow');
       return;
     }
 
@@ -445,23 +463,33 @@ export default function App() {
 
   const handleAdminLoginSuccess = (user: AdminUser, token?: string) => {
     setAdminUser(user);
-    localStorage.setItem('cm_admin_user', JSON.stringify(user));
-    localStorage.setItem('cm_admin_token', token || user.token || 'cm_sec_active');
+    setAdminToken(token || null);
     setCurrentView('admin-panel');
     pushUrl('/admin');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleAdminLogout = () => {
-    localStorage.removeItem('cm_admin_user');
-    localStorage.removeItem('cm_admin_token');
+    fetch('/api/admin/logout', {
+      method: 'POST',
+      headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : undefined,
+      credentials: 'include'
+    }).catch(() => {
+      // ignore network errors on logout
+    });
     setAdminUser(null);
+    setAdminToken(null);
     setCurrentView('services');
     pushUrl('/');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleOpenCategory = (catId: string, parent: string = 'website-development') => {
+    if (catId === 'restoflow') {
+      handleNavigate('restoflow');
+      return;
+    }
+
     setSelectedCategory(catId);
     setCategoryParentService(parent);
 
@@ -728,7 +756,8 @@ export default function App() {
     currentView === 'live-preview' ||
     currentView === 'admin-panel' ||
     currentView === 'admin-login' ||
-    currentView === 'saas-platform';
+    currentView === 'saas-platform' ||
+    currentView === 'restoflow';
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-slate-800 flex flex-col selection:bg-orange-500 selection:text-white">
@@ -782,6 +811,7 @@ export default function App() {
             onLivePreview={handleLivePreview}
             onUseDesign={handleUseDesign}
             onStartProject={handleStartProject}
+            onOpenRestoFlow={() => handleNavigate('restoflow')}
           />
         )}
 
@@ -899,6 +929,10 @@ export default function App() {
               }
             }}
             onSelectCategory={(newCatId) => {
+              if (newCatId === 'restoflow') {
+                handleNavigate('restoflow');
+                return;
+              }
               if (newCatId === 'business' || newCatId === 'business-websites') {
                 handleOpenCategory('business', 'website-development');
               } else {
@@ -958,6 +992,7 @@ export default function App() {
           adminUser ? (
             <AdminPanelView
               adminUser={adminUser}
+              adminToken={adminToken}
               onLogout={handleAdminLogout}
               onNavigateHome={() => handleNavigate('services')}
               onPreviewTemplate={(code) => {
@@ -977,6 +1012,11 @@ export default function App() {
         {/* Commercial Multi-Tenant SaaS Platform */}
         {currentView === 'saas-platform' && (
           <SaasPlatformApp onBackToStudio={() => handleNavigate('services')} />
+        )}
+
+        {/* Portfolio Project #1: RestoFlow — Commercial Restaurant Management Web App */}
+        {currentView === 'restoflow' && (
+          <RestoFlowApp onBackToStudio={() => handleNavigate('web-application')} />
         )}
       </main>
 

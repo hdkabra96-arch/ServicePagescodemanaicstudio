@@ -390,7 +390,7 @@ export function createSaasModulesRouter(): express.Router {
       const params: any[] = [orgId];
 
       if (search) {
-        conditions.push('(p.name LIKE ? OR p.code LIKE ? OR p.category LIKE ? OR COALESCE(c.company_name, "") LIKE ?)');
+        conditions.push("(p.name LIKE ? OR p.code LIKE ? OR p.category LIKE ? OR COALESCE(c.company_name, '') LIKE ?)");
         const pattern = `%${search}%`;
         params.push(pattern, pattern, pattern, pattern);
       }
@@ -706,7 +706,7 @@ export function createSaasModulesRouter(): express.Router {
       const sortDir = String(req.query.sortDir || 'asc').toLowerCase() === 'desc' ? 'DESC' : 'ASC';
 
       const sortColumnMap: Record<string, string> = {
-        due_date: 'COALESCE(t.due_date, "9999-12-31")',
+        due_date: "COALESCE(t.due_date, '9999-12-31')",
         updated_at: 't.updated_at',
         priority: "CASE t.priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END",
         status: 't.status'

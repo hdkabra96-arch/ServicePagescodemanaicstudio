@@ -15,7 +15,8 @@ import {
   Clock,
   Sparkles,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Flame
 } from 'lucide-react';
 import { TemplateItem } from '../../types';
 import { ALL_TEMPLATES, WEB_APP_SOLUTIONS } from '../../data/servicesData';
@@ -27,6 +28,7 @@ interface WebApplicationViewProps {
   onLivePreview: (template: TemplateItem) => void;
   onUseDesign: (template: TemplateItem) => void;
   onStartProject: (requirementContext?: string) => void;
+  onOpenRestoFlow?: () => void;
 }
 
 export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
@@ -34,7 +36,8 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
   onSelectCategory,
   onLivePreview,
   onUseDesign,
-  onStartProject
+  onStartProject,
+  onOpenRestoFlow
 }) => {
   const [activeTab, setActiveTab] = useState<string>('All');
 
@@ -177,6 +180,36 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
         </div>
       </section>
 
+      {/* Featured Live Portfolio Application: Project #01 RestoFlow */}
+      {onOpenRestoFlow && (
+        <section className="pt-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-[#1C1917] text-white rounded-2xl p-6 sm:p-8 border border-[#3F3A36] flex flex-col lg:flex-row lg:items-center justify-between gap-6 shadow-xl">
+            <div className="space-y-2 max-w-2xl">
+              <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#FB923C]">
+                Live Client Presentation Portfolio · App 01 of 11
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                RestoFlow — Commercial Restaurant Management &amp; POS
+              </h2>
+              <p className="text-sm text-[#D6D3D1] leading-relaxed">
+                Full-stack API-first restaurant management system powered by a real relational database,
+                6 role-based staff logins (Owner, Manager, Cashier, Waiter, Kitchen, Inventory), live SQL
+                analytics, and resettable showcase data.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <button
+                onClick={onOpenRestoFlow}
+                className="inline-flex items-center gap-2 bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold text-sm px-6 py-3.5 rounded-xl shadow-lg transition-all"
+              >
+                <span>Launch RestoFlow Live</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Web Application Solutions (6 Cards matching Reference Image 5) */}
       <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
@@ -189,47 +222,101 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {WEB_APP_SOLUTIONS.map((sol) => (
-            <div
-              key={sol.id}
-              onClick={() => {
-                if (onSelectCategory) {
-                  onSelectCategory(sol.id);
-                }
-              }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  if (onSelectCategory) onSelectCategory(sol.id);
-                }
-              }}
-              className="bg-white rounded-2xl p-6 border-2 border-slate-100 hover:border-orange-500 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer group transform hover:-translate-y-1"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Settings className="w-6 h-6" />
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-all shadow-xs">
-                    <ChevronRight className="w-4 h-4" />
-                  </div>
-                </div>
-                <h3 className="font-extrabold text-slate-900 text-lg mb-1 group-hover:text-orange-600 transition-colors">{sol.name}</h3>
-                <p className="text-xs text-slate-500 leading-relaxed">{sol.desc}</p>
-              </div>
+          {WEB_APP_SOLUTIONS.map((sol) => {
+            const isRestoFlow = sol.id === 'restoflow';
+            const handleCardClick = () => {
+              if (isRestoFlow && onOpenRestoFlow) {
+                onOpenRestoFlow();
+                return;
+              }
+              if (onSelectCategory) {
+                onSelectCategory(sol.id);
+              }
+            };
 
-              <div className="pt-6 border-t border-slate-100 mt-4 flex items-center justify-between">
-                <span className="text-xs font-bold text-orange-600 group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                  <span>Explore Templates & Demos</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </span>
-                <span className="text-[10px] font-bold bg-orange-50 text-orange-700 px-2.5 py-0.5 rounded-full border border-orange-200">
-                  View Category &rarr;
-                </span>
+            return (
+              <div
+                key={sol.id}
+                onClick={handleCardClick}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleCardClick();
+                  }
+                }}
+                className={`rounded-2xl p-6 border-2 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer group transform hover:-translate-y-1 ${
+                  isRestoFlow
+                    ? 'bg-[#1C1917] text-white border-[#EA580C] hover:border-[#FB923C]'
+                    : 'bg-white border-slate-100 hover:border-orange-500'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${
+                        isRestoFlow
+                          ? 'bg-[#EA580C] text-white shadow-md shadow-orange-600/30'
+                          : 'bg-orange-50 text-orange-600'
+                      }`}
+                    >
+                      {isRestoFlow ? <Flame className="w-6 h-6" /> : <Settings className="w-6 h-6" />}
+                    </div>
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-xs ${
+                        isRestoFlow
+                          ? 'bg-[#EA580C] text-white group-hover:bg-[#FB923C]'
+                          : 'bg-slate-100 text-slate-500 group-hover:bg-orange-600 group-hover:text-white'
+                      }`}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <h3
+                    className={`font-extrabold text-lg mb-1 transition-colors ${
+                      isRestoFlow
+                        ? 'text-white group-hover:text-[#FB923C]'
+                        : 'text-slate-900 group-hover:text-orange-600'
+                    }`}
+                  >
+                    {sol.name}
+                  </h3>
+                  <p
+                    className={`text-xs leading-relaxed ${
+                      isRestoFlow ? 'text-[#D6D3D1]' : 'text-slate-500'
+                    }`}
+                  >
+                    {sol.desc}
+                  </p>
+                </div>
+
+                <div
+                  className={`pt-6 border-t mt-4 flex items-center justify-between ${
+                    isRestoFlow ? 'border-[#3F3A36]' : 'border-slate-100'
+                  }`}
+                >
+                  <span
+                    className={`text-xs font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1 ${
+                      isRestoFlow ? 'text-[#FB923C]' : 'text-orange-600'
+                    }`}
+                  >
+                    <span>{isRestoFlow ? 'Open Live Web App' : 'Explore Templates & Demos'}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                      isRestoFlow
+                        ? 'bg-[#EA580C]/20 text-[#FB923C] border-[#EA580C]/40'
+                        : 'bg-orange-50 text-orange-700 border-orange-200'
+                    }`}
+                  >
+                    {isRestoFlow ? 'Live App →' : 'View Category →'}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -246,8 +333,51 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
+            {/* Demo 0 (First Option): RestoFlow — Restaurant Management & POS Web Application */}
+            {onOpenRestoFlow && (
+              <div className="bg-[#1C1917] text-white rounded-2xl overflow-hidden border-2 border-[#EA580C] shadow-xl flex flex-col justify-between">
+                <div>
+                  <div className="aspect-16/10 bg-[#292524] overflow-hidden relative">
+                    <img
+                      src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80"
+                      alt="RestoFlow Restaurant Management & POS"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-3 left-3 bg-[#EA580C] text-[10px] font-bold px-2 py-0.5 rounded">
+                      Live Full-Stack App · #1
+                    </div>
+                  </div>
+                  <div className="p-5 space-y-2">
+                    <h3 className="font-extrabold text-base text-white">
+                      RestoFlow — Restaurant Management &amp; POS Web Application
+                    </h3>
+                    <p className="text-xs text-[#D6D3D1]">
+                      12 modules, 6 role-based logins, live POS billing, floor &amp; tables, dark KDS, inventory, recipe costing &amp; PDF/Excel reports.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-5 pt-0 grid grid-cols-2 gap-3 border-t border-[#3F3A36] mt-2">
+                  <button
+                    onClick={onOpenRestoFlow}
+                    className="py-2.5 px-3 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <span>Open Live App</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onStartProject('RestoFlow — Restaurant Management & POS Web Application')}
+                    className="py-2.5 px-3 rounded-xl border border-[#57534E] hover:border-[#FB923C] text-[#F5F5F4] text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <span>Customize</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Demo 1: Business Analytics Dashboard */}
             <div className="bg-slate-900 text-white rounded-2xl overflow-hidden border border-slate-800 shadow-xl flex flex-col justify-between">
               <div>

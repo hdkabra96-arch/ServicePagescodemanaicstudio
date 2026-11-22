@@ -4,6 +4,7 @@ import { getSaasDb, writeAuditLog } from './db.ts';
 import {
   AuthenticatedSaasRequest,
   getClientIp,
+  isSafeHttpUrl,
   loadUserOrganizations,
   requireOrgAccess,
   requireSaasAuth
@@ -12,7 +13,12 @@ import {
 const updateOrgSchema = z.object({
   name: z.string().trim().min(2, 'Workspace name must be at least 2 characters').max(100).optional(),
   industry: z.string().trim().max(60).optional(),
-  website: z.string().trim().max(160).optional(),
+  website: z
+    .string()
+    .trim()
+    .max(160)
+    .optional()
+    .refine((val) => val === undefined || isSafeHttpUrl(val), 'Website must be a valid http:// or https:// URL'),
   billingEmail: z.string().trim().email('Valid billing email is required').max(120).optional()
 });
 

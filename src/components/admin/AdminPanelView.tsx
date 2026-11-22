@@ -18,6 +18,7 @@ import { AdminUser, Enquiry, SiteSettings } from '../../types';
 
 interface AdminPanelViewProps {
   adminUser: AdminUser;
+  adminToken?: string | null;
   onLogout: () => void;
   onNavigateHome: () => void;
   onPreviewTemplate?: (code: string) => void;
@@ -26,6 +27,7 @@ interface AdminPanelViewProps {
 
 export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   adminUser,
+  adminToken,
   onLogout,
   onNavigateHome,
   onPreviewTemplate,
@@ -37,6 +39,14 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   const [loadingCustomSites, setLoadingCustomSites] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<any | null>(null);
+  const [confirmDeleteSiteId, setConfirmDeleteSiteId] = useState<string | null>(null);
+
+  const authHeaders = (json = false): Record<string, string> => {
+    const h: Record<string, string> = {};
+    if (json) h['Content-Type'] = 'application/json';
+    if (adminToken) h['Authorization'] = `Bearer ${adminToken}`;
+    return h;
+  };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -114,7 +124,8 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     try {
       const res = await fetch('/api/site-settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(true),
+        credentials: 'include',
         body: JSON.stringify({
           whatsappNumber: cleanedDigits,
           whatsappMessage: whatsappMessage.trim(),
@@ -172,7 +183,8 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
 
     const res = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(true),
+      credentials: 'include',
       body: JSON.stringify(siteData)
     });
 
@@ -191,13 +203,14 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
   };
 
   const handleDeleteCustomSite = async (siteId: string, siteName: string) => {
-    if (!window.confirm(`Are you sure you want to remove "${siteName}" from the website gallery?`)) {
-      return;
-    }
-
     try {
-      const res = await fetch(`/api/custom-sites/${siteId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/custom-sites/${siteId}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+        credentials: 'include'
+      });
       if (res.ok) {
+        setConfirmDeleteSiteId(null);
         await loadCustomSites();
         setDownloadSuccessMessage(`Removed ${siteName} from gallery.`);
         setTimeout(() => setDownloadSuccessMessage(null), 5000);
@@ -277,8 +290,8 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 6) {
-      setPasswordStatus({ type: 'error', message: 'New password must be at least 6 characters long.' });
+    if (newPassword.length < 8) {
+      setPasswordStatus({ type: 'error', message: 'New password must be at least 8 characters and include letters and numbers.' });
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -289,7 +302,8 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
     try {
       const res = await fetch('/api/admin/update-credentials', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(true),
+        credentials: 'include',
         body: JSON.stringify({
           currentPassword,
           newPassword
@@ -305,12 +319,7 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
         setPasswordStatus({ type: 'error', message: data.message || 'Failed to update password.' });
       }
     } catch {
-      // Local fallback
-      localStorage.setItem('cm_admin_custom_pwd', newPassword);
-      setPasswordStatus({ type: 'success', message: 'Admin password updated successfully (client-side storage active).' });
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setPasswordStatus({ type: 'error', message: 'Could not reach the server to update password.' });
     }
   };
 
@@ -963,23 +972,46 @@ export const AdminPanelView: React.FC<AdminPanelViewProps> = ({
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => {
-                            setEditingSite(site);
-                            setIsAddModalOpen(true);
-                          }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition-colors"
-                          title="Edit Website Details"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCustomSite(site.id, site.name)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
-                          title="Remove from Gallery"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {confirmDeleteSiteId === site.id ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCustomSite(site.id, site.name)}
+                              className="px-2 py-1 rounded-md bg-rose-600 text-white text-[11px] font-bold hover:bg-rose-500 cursor-pointer"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteSiteId(null)}
+                              className="px-2 py-1 rounded-md bg-slate-800 text-slate-300 text-[11px] font-bold hover:bg-slate-700 cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingSite(site);
+                                setIsAddModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition-colors cursor-pointer"
+                              title="Edit Website Details"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteSiteId(site.id)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer"
+                              title="Remove from Gallery"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

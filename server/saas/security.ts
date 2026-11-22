@@ -22,6 +22,17 @@ export function generateOpaqueToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
+export function isSafeHttpUrl(raw: string): boolean {
+  const trimmed = raw.trim();
+  if (!trimmed) return true;
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export function getClientIp(req: Request): string {
   const fwd = req.headers['x-forwarded-for'];
   if (typeof fwd === 'string' && fwd.length > 0) {
@@ -37,23 +48,42 @@ export function parseCookies(cookieHeader: string | undefined): Record<string, s
     const idx = part.indexOf('=');
     if (idx === -1) continue;
     const key = part.slice(0, idx).trim();
-    const val = decodeURIComponent(part.slice(idx + 1).trim());
-    result[key] = val;
+    try {
+      result[key] = decodeURIComponent(part.slice(idx + 1).trim());
+    } catch {
+      result[key] = part.slice(idx + 1).trim();
+    }
   }
   return result;
 }
 
-export function extractSessionToken(req: Request): string | null {
+export function extractSessionToken(req: Request): { token: string; source: 'bearer' | 'cookie' } | null {
   const auth = req.headers.authorization;
   if (auth && auth.startsWith('Bearer ')) {
     const token = auth.slice(7).trim();
-    if (token.length >= 32) return token;
+    if (token.length >= 32) return { token, source: 'bearer' };
   }
   const cookies = parseCookies(req.headers.cookie);
   if (cookies[SESSION_COOKIE_NAME] && cookies[SESSION_COOKIE_NAME].length >= 32) {
-    return cookies[SESSION_COOKIE_NAME];
+    return { token: cookies[SESSION_COOKIE_NAME], source: 'cookie' };
   }
   return null;
+}
+
+export function verifyOriginMatchesHost(req: Request): boolean {
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  const expectedHost = String(req.headers['x-forwarded-host'] || req.headers.host || '')
+    .split(',')[0]
+    .trim()
+    .toLowerCase();
+  if (!expectedHost) return false;
+  try {
+    const parsed = new URL(origin);
+    return parsed.host.toLowerCase() === expectedHost;
+  } catch {
+    return false;
+  }
 }
 
 export function setSessionCookie(req: Request, res: Response, rawToken: string): void {
@@ -63,7 +93,7 @@ export function setSessionCookie(req: Request, res: Response, rawToken: string):
     'Path=/',
     'HttpOnly',
     `Max-Age=${SESSION_TTL_DAYS * 86400}`,
-    isSecure ? 'SameSite=None; Secure' : 'SameSite=Lax'
+    isSecure ? 'SameSite=None; Secure; Partitioned' : 'SameSite=Lax'
   ];
   res.setHeader('Set-Cookie', parts.join('; '));
 }
@@ -75,9 +105,40 @@ export function clearSessionCookie(req: Request, res: Response): void {
     'Path=/',
     'HttpOnly',
     'Max-Age=0',
-    isSecure ? 'SameSite=None; Secure' : 'SameSite=Lax'
+    isSecure ? 'SameSite=None; Secure; Partitioned' : 'SameSite=Lax'
   ];
   res.setHeader('Set-Cookie', parts.join('; '));
+}
+
+// Sliding-window in-memory rate limiter for authentication endpoints
+const rateLimitBuckets = new Map<string, number[]>();
+
+export function resetRateLimitStore(): void {
+  rateLimitBuckets.clear();
+}
+
+export function createRateLimiter(options: { windowMs: number; max: number; keyPrefix: string }) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const ip = getClientIp(req);
+    const key = `${options.keyPrefix}:${ip}`;
+    const now = Date.now();
+    const cutoff = now - options.windowMs;
+    const recent = (rateLimitBuckets.get(key) || []).filter((ts) => ts > cutoff);
+
+    if (recent.length >= options.max) {
+      const retryAfterSec = Math.max(1, Math.ceil((recent[0] + options.windowMs - now) / 1000));
+      res.setHeader('Retry-After', String(retryAfterSec));
+      res.status(429).json({
+        success: false,
+        message: 'Too many authentication attempts. Please wait a moment and try again.'
+      });
+      return;
+    }
+
+    recent.push(now);
+    rateLimitBuckets.set(key, recent);
+    next();
+  };
 }
 
 export function createSessionRecord(
@@ -183,14 +244,21 @@ export function loadUserOrganizations(db: Database.Database, userId: string): Sa
 }
 
 export function requireSaasAuth(req: AuthenticatedSaasRequest, res: Response, next: NextFunction): void {
-  const rawToken = extractSessionToken(req);
-  if (!rawToken) {
+  const extracted = extractSessionToken(req);
+  if (!extracted) {
     res.status(401).json({ success: false, message: 'Authentication required. Please sign in.' });
     return;
   }
 
+  // Cross-origin request check for cookie-authenticated mutations
+  const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method.toUpperCase());
+  if (isMutation && extracted.source === 'cookie' && !verifyOriginMatchesHost(req)) {
+    res.status(403).json({ success: false, message: 'Cross-origin state-changing request rejected.' });
+    return;
+  }
+
   const db = getSaasDb();
-  const tokenHash = hashOpaqueToken(rawToken);
+  const tokenHash = hashOpaqueToken(extracted.token);
   const nowIso = new Date().toISOString();
 
   const sessionRow = db

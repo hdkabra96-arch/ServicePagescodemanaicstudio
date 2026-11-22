@@ -12,10 +12,12 @@ import {
 import {
   AuthenticatedSaasRequest,
   clearSessionCookie,
+  createRateLimiter,
   createSessionRecord,
   generateOpaqueToken,
   getClientIp,
   hashOpaqueToken,
+  isSafeHttpUrl,
   loadUserOrganizations,
   mapUserRow,
   requireOrgAccess,
@@ -78,7 +80,13 @@ const changePasswordSchema = z.object({
 const createOrgSchema = z.object({
   name: z.string().trim().min(2, 'Workspace name must be at least 2 characters').max(100),
   industry: z.string().trim().max(60).optional().default('Technology & SaaS'),
-  website: z.string().trim().max(160).optional().default(''),
+  website: z
+    .string()
+    .trim()
+    .max(160)
+    .optional()
+    .default('')
+    .refine((val) => isSafeHttpUrl(val), 'Website must be a valid http:// or https:// URL'),
   billingEmail: z.string().trim().email().optional()
 });
 
@@ -87,7 +95,13 @@ const inviteMemberSchema = z.object({
   email: z.string().trim().email().max(120),
   jobTitle: z.string().trim().max(80).optional().default('Team Member'),
   role: z.enum(['admin', 'manager', 'member']).default('member'),
-  temporaryPassword: z.string().min(8).max(128).optional()
+  temporaryPassword: z
+    .string()
+    .min(8, 'Temporary password must be at least 8 characters')
+    .max(128)
+    .regex(/[A-Za-z]/, 'Temporary password must include at least one letter')
+    .regex(/[0-9]/, 'Temporary password must include at least one number')
+    .optional()
 });
 
 const updateMemberRoleSchema = z.object({
@@ -105,6 +119,9 @@ function slugify(input: string): string {
 
 export function createSaasAuthRouter(): express.Router {
   const router = express.Router();
+  const loginLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 25, keyPrefix: 'saas_login' });
+  const registerLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 15, keyPrefix: 'saas_register' });
+  const resetLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 15, keyPrefix: 'saas_reset' });
 
   // Public plan catalog
   router.get('/plans', (_req, res) => {
@@ -112,7 +129,7 @@ export function createSaasAuthRouter(): express.Router {
   });
 
   // Register user + initial tenant workspace
-  router.post('/auth/register', (req, res) => {
+  router.post('/auth/register', registerLimiter, (req, res) => {
     const parsed = registerSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
@@ -205,7 +222,7 @@ export function createSaasAuthRouter(): express.Router {
   });
 
   // Login
-  router.post('/auth/login', (req, res) => {
+  router.post('/auth/login', loginLimiter, (req, res) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
@@ -299,7 +316,7 @@ export function createSaasAuthRouter(): express.Router {
   });
 
   // Forgot Password (creates single-use hashed token in SQLite)
-  router.post('/auth/forgot-password', (req, res) => {
+  router.post('/auth/forgot-password', resetLimiter, (req, res) => {
     const parsed = forgotPasswordSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ success: false, message: 'Please provide a valid email address.' });
@@ -646,7 +663,8 @@ export function createSaasAuthRouter(): express.Router {
       const normalizedEmail = parsed.data.email.toLowerCase();
       const nowIso = new Date().toISOString();
       let existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(normalizedEmail) as any;
-      const initialPassword = parsed.data.temporaryPassword || 'Welcome@2026!';
+      const initialPassword =
+        parsed.data.temporaryPassword || `Cm!${generateOpaqueToken().slice(0, 12)}9`;
 
       const tx = db.transaction(() => {
         if (!existingUser) {
