@@ -11,7 +11,8 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "test": "tsx --test tests/phase2-db-auth.test.ts tests/phase3-dashboard.test.ts tests/phase4-modules.test.ts tests/phase5-advanced.test.ts tests/phase6-billing.test.ts tests/phase7-security-audit.test.ts",
-    "test:restoflow": "tsx --test tests/restoflow/phase2-db-auth.test.ts tests/restoflow/phase4-pos-orders-kds.test.ts tests/restoflow/phase5-inventory-recipes.test.ts tests/restoflow/phase6-customers-staff-reports.test.ts tests/restoflow/phase7-security-production.test.ts"
+    "test:restoflow": "tsx --test tests/restoflow/phase2-db-auth.test.ts tests/restoflow/phase4-pos-orders-kds.test.ts tests/restoflow/phase5-inventory-recipes.test.ts tests/restoflow/phase6-customers-staff-reports.test.ts tests/restoflow/phase7-security-production.test.ts",
+    "test:edumanage": "tsx --test tests/edumanage/phase2-db-auth-dashboard.test.ts tests/edumanage/phase3-students-teachers.test.ts tests/edumanage/phase4-attendance-timetable-homework.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

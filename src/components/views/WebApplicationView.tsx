@@ -29,6 +29,7 @@ interface WebApplicationViewProps {
   onUseDesign: (template: TemplateItem) => void;
   onStartProject: (requirementContext?: string) => void;
   onOpenRestoFlow?: () => void;
+  onOpenEduManage?: () => void;
 }
 
 export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
@@ -37,7 +38,8 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
   onLivePreview,
   onUseDesign,
   onStartProject,
-  onOpenRestoFlow
+  onOpenRestoFlow,
+  onOpenEduManage
 }) => {
   const [activeTab, setActiveTab] = useState<string>('All');
 
@@ -224,9 +226,14 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {WEB_APP_SOLUTIONS.map((sol) => {
             const isRestoFlow = sol.id === 'restoflow';
+            const isEduManage = sol.id === 'edumanage';
             const handleCardClick = () => {
               if (isRestoFlow && onOpenRestoFlow) {
                 onOpenRestoFlow();
+                return;
+              }
+              if (isEduManage && onOpenEduManage) {
+                onOpenEduManage();
                 return;
               }
               if (onSelectCategory) {
@@ -249,6 +256,8 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
                 className={`rounded-2xl p-6 border-2 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer group transform hover:-translate-y-1 ${
                   isRestoFlow
                     ? 'bg-[#1C1917] text-white border-[#EA580C] hover:border-[#FB923C]'
+                    : isEduManage
+                    ? 'bg-[#0F2942] text-white border-[#1769AA] hover:border-[#5BB6F5]'
                     : 'bg-white border-slate-100 hover:border-orange-500'
                 }`}
               >
@@ -258,15 +267,25 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
                       className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${
                         isRestoFlow
                           ? 'bg-[#EA580C] text-white shadow-md shadow-orange-600/30'
+                          : isEduManage
+                          ? 'bg-[#1769AA] text-white shadow-md shadow-sky-900/30'
                           : 'bg-orange-50 text-orange-600'
                       }`}
                     >
-                      {isRestoFlow ? <Flame className="w-6 h-6" /> : <Settings className="w-6 h-6" />}
+                      {isRestoFlow ? (
+                        <Flame className="w-6 h-6" />
+                      ) : isEduManage ? (
+                        <GraduationCap className="w-6 h-6" />
+                      ) : (
+                        <Settings className="w-6 h-6" />
+                      )}
                     </div>
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-xs ${
                         isRestoFlow
                           ? 'bg-[#EA580C] text-white group-hover:bg-[#FB923C]'
+                          : isEduManage
+                          ? 'bg-[#1769AA] text-white group-hover:bg-[#5BB6F5]'
                           : 'bg-slate-100 text-slate-500 group-hover:bg-orange-600 group-hover:text-white'
                       }`}
                     >
@@ -277,6 +296,8 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
                     className={`font-extrabold text-lg mb-1 transition-colors ${
                       isRestoFlow
                         ? 'text-white group-hover:text-[#FB923C]'
+                        : isEduManage
+                        ? 'text-white group-hover:text-[#5BB6F5]'
                         : 'text-slate-900 group-hover:text-orange-600'
                     }`}
                   >
@@ -284,7 +305,11 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
                   </h3>
                   <p
                     className={`text-xs leading-relaxed ${
-                      isRestoFlow ? 'text-[#D6D3D1]' : 'text-slate-500'
+                      isRestoFlow
+                        ? 'text-[#D6D3D1]'
+                        : isEduManage
+                        ? 'text-[#BCCCDC]'
+                        : 'text-slate-500'
                     }`}
                   >
                     {sol.desc}
@@ -293,25 +318,37 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
 
                 <div
                   className={`pt-6 border-t mt-4 flex items-center justify-between ${
-                    isRestoFlow ? 'border-[#3F3A36]' : 'border-slate-100'
+                    isRestoFlow
+                      ? 'border-[#3F3A36]'
+                      : isEduManage
+                      ? 'border-[#1E3D5C]'
+                      : 'border-slate-100'
                   }`}
                 >
                   <span
                     className={`text-xs font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1 ${
-                      isRestoFlow ? 'text-[#FB923C]' : 'text-orange-600'
+                      isRestoFlow
+                        ? 'text-[#FB923C]'
+                        : isEduManage
+                        ? 'text-[#5BB6F5]'
+                        : 'text-orange-600'
                     }`}
                   >
-                    <span>{isRestoFlow ? 'Open Live Web App' : 'Explore Templates & Demos'}</span>
+                    <span>
+                      {isRestoFlow || isEduManage ? 'Open Live Web App' : 'Explore Templates & Demos'}
+                    </span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                   <span
                     className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
                       isRestoFlow
                         ? 'bg-[#EA580C]/20 text-[#FB923C] border-[#EA580C]/40'
+                        : isEduManage
+                        ? 'bg-[#1769AA]/30 text-[#5BB6F5] border-[#5BB6F5]/40'
                         : 'bg-orange-50 text-orange-700 border-orange-200'
                     }`}
                   >
-                    {isRestoFlow ? 'Live App →' : 'View Category →'}
+                    {isRestoFlow || isEduManage ? 'Live App →' : 'View Category →'}
                   </span>
                 </div>
               </div>
@@ -370,6 +407,49 @@ export const WebApplicationView: React.FC<WebApplicationViewProps> = ({
                   <button
                     onClick={() => onStartProject('RestoFlow — Restaurant Management & POS Web Application')}
                     className="py-2.5 px-3 rounded-xl border border-[#57534E] hover:border-[#FB923C] text-[#F5F5F4] text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <span>Customize</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Demo 0b (Second Option): EduManage — School Management ERP Web Application */}
+            {onOpenEduManage && (
+              <div className="bg-[#0F2942] text-white rounded-2xl overflow-hidden border-2 border-[#1769AA] shadow-xl flex flex-col justify-between">
+                <div>
+                  <div className="aspect-16/10 bg-[#102A43] overflow-hidden relative">
+                    <img
+                      src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&auto=format&fit=crop&q=80"
+                      alt="EduManage School Management ERP"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-3 left-3 bg-[#1769AA] text-[10px] font-bold px-2 py-0.5 rounded">
+                      Live Full-Stack App · #2
+                    </div>
+                  </div>
+                  <div className="p-5 space-y-2">
+                    <h3 className="font-extrabold text-base text-white">
+                      EduManage — School Management ERP Web Application
+                    </h3>
+                    <p className="text-xs text-[#BCCCDC]">
+                      CBSE/GSEB school ERP with 8 role-based logins, live SQL analytics, attendance, exams, fees, library, transport &amp; portals.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-5 pt-0 grid grid-cols-2 gap-3 border-t border-[#1E3D5C] mt-2">
+                  <button
+                    onClick={onOpenEduManage}
+                    className="py-2.5 px-3 rounded-xl bg-[#1769AA] hover:bg-[#12558C] text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <span>Open Live App</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onStartProject('EduManage — School Management ERP Web Application')}
+                    className="py-2.5 px-3 rounded-xl border border-[#334E68] hover:border-[#5BB6F5] text-[#F0F4F8] text-xs font-bold transition-all flex items-center justify-center gap-1.5"
                   >
                     <span>Customize</span>
                     <ArrowRight className="w-3.5 h-3.5" />

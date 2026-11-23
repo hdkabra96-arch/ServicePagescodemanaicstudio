@@ -42,6 +42,7 @@ import { AdminPanelView } from './components/admin/AdminPanelView';
 import { ExternalWebsiteLivePreview } from './components/demos/ExternalWebsiteLivePreview';
 import { SaasPlatformApp } from './components/saas/SaasPlatformApp';
 import { RestoFlowApp } from './components/restoflow/RestoFlowApp';
+import { EduManageApp } from './components/edumanage/EduManageApp';
 import { AdminUser } from './types';
 
 let customSitesStore: TemplateItem[] = [];
@@ -185,6 +186,8 @@ export default function App() {
           return '/saas';
         case 'restoflow':
           return '/restoflow';
+        case 'edumanage':
+          return '/edumanage';
         case 'live-preview': {
           const tmpl = template || activeTemplate;
           const slug = (tmpl as any)?.slug || tmpl?.id || 'preview';
@@ -248,6 +251,12 @@ export default function App() {
     // 0c. Portfolio Project #1 — RestoFlow route: /restoflow
     if (first === 'restoflow') {
       setCurrentView('restoflow');
+      return;
+    }
+
+    // 0d. Portfolio Project #2 — EduManage route: /edumanage
+    if (first === 'edumanage') {
+      setCurrentView('edumanage');
       return;
     }
 
@@ -487,6 +496,10 @@ export default function App() {
   const handleOpenCategory = (catId: string, parent: string = 'website-development') => {
     if (catId === 'restoflow') {
       handleNavigate('restoflow');
+      return;
+    }
+    if (catId === 'edumanage') {
+      handleNavigate('edumanage');
       return;
     }
 
@@ -757,7 +770,8 @@ export default function App() {
     currentView === 'admin-panel' ||
     currentView === 'admin-login' ||
     currentView === 'saas-platform' ||
-    currentView === 'restoflow';
+    currentView === 'restoflow' ||
+    currentView === 'edumanage';
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-slate-800 flex flex-col selection:bg-orange-500 selection:text-white">
@@ -812,6 +826,7 @@ export default function App() {
             onUseDesign={handleUseDesign}
             onStartProject={handleStartProject}
             onOpenRestoFlow={() => handleNavigate('restoflow')}
+            onOpenEduManage={() => handleNavigate('edumanage')}
           />
         )}
 
@@ -933,6 +948,10 @@ export default function App() {
                 handleNavigate('restoflow');
                 return;
               }
+              if (newCatId === 'edumanage') {
+                handleNavigate('edumanage');
+                return;
+              }
               if (newCatId === 'business' || newCatId === 'business-websites') {
                 handleOpenCategory('business', 'website-development');
               } else {
@@ -1017,6 +1036,11 @@ export default function App() {
         {/* Portfolio Project #1: RestoFlow — Commercial Restaurant Management Web App */}
         {currentView === 'restoflow' && (
           <RestoFlowApp onBackToStudio={() => handleNavigate('web-application')} />
+        )}
+
+        {/* Portfolio Project #2: EduManage — School Management ERP Web App */}
+        {currentView === 'edumanage' && (
+          <EduManageApp onBackToStudio={() => handleNavigate('web-application')} />
         )}
       </main>
 

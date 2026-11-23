@@ -19,7 +19,8 @@ export type PageView =
   | 'admin-login'
   | 'admin-panel'
   | 'saas-platform'
-  | 'restoflow';
+  | 'restoflow'
+  | 'edumanage';
 
 export interface AdminUser {
   id?: string;

@@ -24,6 +24,8 @@ import { createSaasAdvancedRouter } from './server/saas/advancedRoutes.ts';
 import { createSaasBillingRouter } from './server/saas/billingRoutes.ts';
 import { getRestoFlowDb } from './server/restoflow/db.ts';
 import { createRestoFlowRouter } from './server/restoflow/routes/index.ts';
+import { getEduManageDb } from './server/edumanage/db.ts';
+import { createEduManageRouter } from './server/edumanage/routes/index.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -830,6 +832,9 @@ app.use('/api/saas', createSaasBillingRouter());
 // RestoFlow — Portfolio Project #1: Restaurant Management & POS REST APIs
 app.use('/api/restoflow', createRestoFlowRouter());
 
+// EduManage — Portfolio Project #2: School Management ERP REST APIs
+app.use('/api/edumanage', createEduManageRouter());
+
 // Centralized JSON error handler for API routes (prevents leaking HTML stack traces)
 app.use('/api', (err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   if (err?.type === 'entity.parse.failed') {
@@ -848,6 +853,7 @@ async function startServer() {
   ensureSiteSettingsStorage();
   getSaasDb();
   getRestoFlowDb();
+  getEduManageDb();
 
   const httpServer = http.createServer(app);
   let viteServer: Awaited<ReturnType<typeof createViteServer>> | null = null;
